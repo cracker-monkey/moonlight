@@ -396,3 +396,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+foreman.toml
+selene.toml
+.vscode/settings.json
