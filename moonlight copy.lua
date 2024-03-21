@@ -29,8 +29,6 @@ local Camera = Workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local MouseLocation = UserInputService:GetMouseLocation()
 --
-local TargetList = {}
---
 local debuggetupvalue = debug.getupvalue
 local Color3fromRGB = Color3.fromRGB
 local Color3fromHSV = Color3.fromHSV
@@ -78,20 +76,22 @@ local Watermark = Library:Watermark("Moonlight | dev | v0.0.1a")
 
 --// Tabs
 local LegitTab = Window:Tab("Legit")
-local RageTab = Window:Tab("Rage")
+--[[ local RageTab = Window:Tab("Rage")
 local VisualsTab = Window:Tab("Visuals")
-local MiscTab = Window:Tab("Misc")
+local MiscTab = Window:Tab("Misc") ]]
 local SettingsTab = Window:Tab("Settings")
 
 --// Sections & its toggles, keybinds, sliders, etc.
 local AimAssist = LegitTab:Section({ name = "Aim Assist", side = "left" })
 AimAssist:Toggle({ name = "Enabled", default = true, flag = "aim_assist_enabled" }):Keybind({ name = "Aim Assist", listignored = false, mode = "hold", blacklist = {}, flag = "aim_assist_key" })
 AimAssist:Toggle({ name = "Visible Check", default = true, flag = "aim_assist_visible_check" })
+AimAssist:Toggle({ name = "Invisible Check", default = true, flag = "aim_assist_invisible_check" })
+AimAssist:Toggle({ name = "Forcefield Check", default = true, flag = "aim_assist_forcefield_check" })
 AimAssist:Toggle({ name = "Team Check", default = true, flag = "aim_assist_team_check" })
 AimAssist:Separator()
-AimAssist:Slider({ name = "Field of View", default = 70, float = 1, suffix = "°", min = 0, max = 180, flag = "aim_assist_fov" })
-AimAssist:Slider({ name = "Deadzone", default = 5, float = 1, suffix = "°", min = 0, max = 50, flag = "aim_assist_deadzone" })
-AimAssist:Slider({ name = "Maximum Distance", default = 300, float = 1, suffix = " studs", min = 0, max = 10000, flag = "aim_assist_max_distance" })
+AimAssist:Slider({ name = "Field of View", default = 70, float = 1, suffix = "°", min = 1, max = 180, flag = "aim_assist_fov" })
+AimAssist:Slider({ name = "Deadzone", default = 5, float = 1, suffix = "°", min = 1, max = 50, flag = "aim_assist_deadzone" })
+AimAssist:Slider({ name = "Maximum Distance", default = 300, float = 1, suffix = " studs", min = 1, max = 10000, flag = "aim_assist_max_distance" })
 AimAssist:Slider({ name = "Horizontal Smoothing", default = 20, float = 1, suffix = "%", min = 0, max = 50, flag = "aim_assist_smoothness_horizontal" })
 AimAssist:Slider({ name = "Vertical Smoothing", default = 20, float = 1, suffix = "%", min = 0, max = 50, flag = "aim_assist_smoothness_vertical" })
 AimAssist:Separator()
@@ -99,7 +99,7 @@ AimAssist:Dropdown({ name = "Target Selection", content = { "Mouse", "Health", "
 AimAssist:Dropdown({ name = "Hitscan", content = { "Head", "Upper Torso", "Lower Torso", "Arms", "Legs" }, multi = true, flag = "aim_assist_hitscan" })
 AimAssist:Dropdown({ name = "Hitscan Priority", content = { "Head", "Upper Torso", "Lower Torso", "Arms", "Legs" }, multi = false, flag = "aim_assist_hitscan_priority" })
 
-local BulletRedirection = LegitTab:Section({ name = "Bullet Redirection", side = "middle" })
+--[[ local BulletRedirection = LegitTab:Section({ name = "Bullet Redirection", side = "middle" })
 BulletRedirection:Toggle({ name = "Enabled", default = true, flag = "bullet_redirection_enabled" })
 BulletRedirection:Toggle({ name = "Visible Check", default = true, flag = "bullet_redirection_visible_check" })
 -- BulletRedirection:Toggle({ name = "Team Check", default = true, flag = "bullet_redirection_team_check" })
@@ -116,7 +116,7 @@ TriggerbotSection:Toggle({ name = "Visible Check", default = true, flag = "trigg
 -- TriggerbotSection:Toggle({ name = "Team Check", default = true, flag = "triggerbot_team_check" })
 TriggerbotSection:Separator()
 TriggerbotSection:Slider({ name = "Delay", default = 120, float = 1, suffix = "ms", min = 0, max = 1000, flag = "triggerbot_delay" })
-TriggerbotSection:Dropdown({ name = "Hitscan", content = { "Head", "Upper Torso", "Lower Torso", "Arms", "Legs" }, multi = true, flag = "triggerbot_hitscan" })
+TriggerbotSection:Dropdown({ name = "Hitscan", content = { "Head", "Upper Torso", "Lower Torso", "Arms", "Legs" }, multi = true, flag = "triggerbot_hitscan" }) ]]
 
 Window:SettingsTab(Watermark)
 
@@ -162,12 +162,37 @@ Library:Connect(UserInputService.InputChanged, LPH_NO_VIRTUALIZE(function()
 	MouseLocation = UserInputService:GetMouseLocation()
 end))
 
+local AimAssistKeyHeld = false
+Library:Connect(UserInputService.InputBegan, LPH_NO_VIRTUALIZE(function(input)
+	if input.UserInputType == Library.flags["aim_assist_key"] then
+		AimAssistKeyHeld = true
+		print("Aim Assist Key Held")
+	end
+end))
+
+Library:Connect(UserInputService.InputEnded, LPH_NO_VIRTUALIZE(function(input)
+	if input.UserInputType == Library.flags["aim_assist_key"] then
+		AimAssistKeyHeld = false
+		print("Aim Assist Key Released")
+	end
+end))
+
+
+local AimAssistTarget
 Library:Connect(RunService.RenderStepped, LPH_JIT_MAX(function() -- Aim Assist
+	if not Library.flags["aim_assist_enabled"] then
+		return
+	end
+
 	if Library.open then
 		return
 	end
 
-	TargetList = {}
+	if not AimAssistKeyHeld then
+		return
+	end
+
+	AimAssistTarget = nil
 	for _, entry in next, Players:GetPlayers() do
 		if entry == LocalPlayer then -- dont target the local player
 			continue
@@ -209,37 +234,17 @@ Library:Connect(RunService.RenderStepped, LPH_JIT_MAX(function() -- Aim Assist
 			continue
 		end
 
-		if Library.Playerlist:IsTagged(entry, "Prioritized") then
-		 	tableinsert(TargetList.Priority, { entry, DistanceFromMouse, entry.Character:FindFirstChildOfClass("Humanoid").Health, DistanceFromCharacter }) -- add the player to the priority list
-		else
-			tableinsert(TargetList, { 
-				entry,
-				DistanceFromMouse, 
-				entry.Character:FindFirstChildOfClass("Humanoid").Health or 0, 
-				DistanceFromCharacter
-			})
-		end
-	end
-	
-	if Library.flags["aim_assist_target_selection"] == "Mouse" then
-		tablesort(TargetList, function(a, b)
-			return a[2] < b[2]
-		end)
-	elseif Library.flags["aim_assist_target_selection"] == "Health" then
-		tablesort(TargetList, function(a, b)
-			return a[3] < b[3]
-		end)
-	elseif Library.flags["aim_assist_target_selection"] == "Distance" then
-		tablesort(TargetList, function(a, b)
-			return a[4] < b[4]
-		end)
+		AimAssistTarget = entry
 	end
 
-	if #TargetList > 0 then
-		local Target = TargetList[1]
-		local TargetHitboxPosition, TargetOnScreen = Camera:WorldToViewportPoint(Target[1].Character.PrimaryPart.Position)
-		if TargetHitboxPosition and TargetOnScreen then
-			mousemoverel((TargetHitboxPosition.X - MouseLocation.X) / Library.flags["aim_assist_smoothness_horizontal"], (TargetHitboxPosition.Y - MouseLocation.Y) / Library.flags["aim_assist_smoothness_vertical"])
+	if AimAssistTarget then
+		print(AimAssistTarget)
+		local TargetPosition, IsTargetOnScreen = Camera:WorldToViewportPoint(AimAssistTarget.Character.PrimaryPart.Position)
+		if TargetPosition and IsTargetOnScreen then
+			mousemoverel(
+				(TargetPosition.X - MouseLocation.X) / Library.flags["aim_assist_smoothness_horizontal"],
+				(TargetPosition.Y - MouseLocation.Y) / Library.flags["aim_assist_smoothness_vertical"]
+			)
 		end
 	end
 end))
