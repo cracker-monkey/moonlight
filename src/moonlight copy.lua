@@ -1,24 +1,3 @@
--- TODO
---[[
-	CURRENT:
-		- [ ] Make the toggles, not automatically selected
-		- [ ] Make the dropdowns select the first index
-		- [ ] Make the aimbot hitscan not be a multi-dropdown, and make it so it has the values { "Head", "Torso", "Closest" }
-		- [ ] Make ESP toggles
-
-	HIGH PRIORITY:
-		- [ ] Make the aim assist, triggerbot and bullet redirection features work
-
-	MEDIUM PRIORITY:
-		- [ ] Add a few elements to the rage tab for features (e.g. aimbot, anti-aim, etc.)
-
-	LOW PRIORITY:
-		- [ ] Add a few elements to the visuals tab for features (e.g. esp, chams, etc.)
-		- [ ] Add a few elements to the misc tab for features (e.g. speed, jump, etc.)
-		- [ ] Add a few elements to the settings tab for features (e.g. theme, Watermark, etc.)
---]]
---
-
 if not LPH_OBFUSCATED and getgenv().Moonlight then
 	getgenv().Moonlight.Libraries.Utility:Unload()
 end
@@ -28,11 +7,13 @@ local Library = loadstring(game:HttpGet("https://e-z.tools/p/raw/6j3xg81igs", tr
 --
 
 -- Services
+local NetworkClient = game:GetService("NetworkClient")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local MarketPlaceService = game:GetService("MarketplaceService")
+local Lighting = game:GetService("Lighting")
 --
 
 -- Variables
@@ -76,6 +57,8 @@ local mathatan2 = math.atan2
 local Env = getgenv()
 local Ignores = { workspace.Players, workspace.Ignore, Camera }
 
+local Gravity = Vector3new(0, workspace.Gravity, 0)
+
 local RayParams = RaycastParams.new()
 RayParams.FilterType = Enum.RaycastFilterType.Blacklist
 RayParams.FilterDescendantsInstances = Ignores
@@ -91,7 +74,8 @@ local Modules = {
 
 local Utility = {
 	Drawings = {},
-	Objects = {}
+	Objects = {},
+	BindToRenders = {}
 }
 
 local Legitbot = {
@@ -112,11 +96,128 @@ local Legitbot = {
 }
 
 local Visuals = {
+	Materials = {
+		["SmoothPlastic"] = Enum.Material.SmoothPlastic,
+		["Plastic"] = Enum.Material.Plastic,
+		["Neon"] = Enum.Material.Neon,
+		["ForceField"] = Enum.Material.ForceField,
+		["Glass"] = Enum.Material.Glass,
+	},
+	Textures = {
+		["Off"] = "rbxassetid://0"
+	},
+	BulletTracers = {
+		["Shrek"] = "rbxassetid://180614268",
+		["Bee"] = "rbxassetid://14194951314",
+		["Cat"] = "rbxassetid://964125032",
+		["Missing Texture"] = "rbxassetid://1541381206",
+		["Skibidy Toilet"] = "rbxassetid://14488881439"
+	},
+	Skyboxes = {
+		["Purple Nebula"] = {
+			["SkyboxBk"] = "rbxassetid://159454299",
+			["SkyboxDn"] = "rbxassetid://159454296",
+			["SkyboxFt"] = "rbxassetid://159454293",
+			["SkyboxLf"] = "rbxassetid://159454286",
+			["SkyboxRt"] = "rbxassetid://159454300",
+			["SkyboxUp"] = "rbxassetid://159454288"
+		},
+		["Night Sky"] = {
+			["SkyboxBk"] = "rbxassetid://12064107",
+			["SkyboxDn"] = "rbxassetid://12064152",
+			["SkyboxFt"] = "rbxassetid://12064121",
+			["SkyboxLf"] = "rbxassetid://12063984",
+			["SkyboxRt"] = "rbxassetid://12064115",
+			["SkyboxUp"] = "rbxassetid://12064131"
+		},
+		["Pink Daylight"] = {
+			["SkyboxBk"] = "rbxassetid://271042516",
+			["SkyboxDn"] = "rbxassetid://271077243",
+			["SkyboxFt"] = "rbxassetid://271042556",
+			["SkyboxLf"] = "rbxassetid://271042310",
+			["SkyboxRt"] = "rbxassetid://271042467",
+			["SkyboxUp"] = "rbxassetid://271077958"
+		},
+		["Morning Glow"] = {
+			["SkyboxBk"] = "rbxassetid://1417494030",
+			["SkyboxDn"] = "rbxassetid://1417494146",
+			["SkyboxFt"] = "rbxassetid://1417494253",
+			["SkyboxLf"] = "rbxassetid://1417494402",
+			["SkyboxRt"] = "rbxassetid://1417494499",
+			["SkyboxUp"] = "rbxassetid://1417494643"
+		},
+		["Setting Sun"] = {
+			["SkyboxBk"] = "rbxassetid://626460377",
+			["SkyboxDn"] = "rbxassetid://626460216",
+			["SkyboxFt"] = "rbxassetid://626460513",
+			["SkyboxLf"] = "rbxassetid://626473032",
+			["SkyboxRt"] = "rbxassetid://626458639",
+			["SkyboxUp"] = "rbxassetid://626460625"
+		},
+		['Cache'] = {
+			['SkyboxBk'] = 'rbxassetid://220513302';
+			['SkyboxDn'] = 'rbxassetid://213221473';
+			['SkyboxFt'] = 'rbxassetid://220513328';
+			['SkyboxLf'] = 'rbxassetid://220513318';
+			['SkyboxRt'] = 'rbxassetid://220513279';
+			['SkyboxUp'] = 'rbxassetid://220513345';
+		},
+		["Fade Blue"] = {
+			["SkyboxBk"] = "rbxassetid://153695414",
+			["SkyboxDn"] = "rbxassetid://153695352",
+			["SkyboxFt"] = "rbxassetid://153695452",
+			["SkyboxLf"] = "rbxassetid://153695320",
+			["SkyboxRt"] = "rbxassetid://153695383",
+			["SkyboxUp"] = "rbxassetid://153695471"
+		},
+		["Elegant Morning"] = {
+			["SkyboxBk"] = "rbxassetid://153767241",
+			["SkyboxDn"] = "rbxassetid://153767216",
+			["SkyboxFt"] = "rbxassetid://153767266",
+			["SkyboxLf"] = "rbxassetid://153767200",
+			["SkyboxRt"] = "rbxassetid://153767231",
+			["SkyboxUp"] = "rbxassetid://153767288"
+		},
+		["Neptune"] = {
+			["SkyboxBk"] = "rbxassetid://218955819",
+			["SkyboxDn"] = "rbxassetid://218953419",
+			["SkyboxFt"] = "rbxassetid://218954524",
+			["SkyboxLf"] = "rbxassetid://218958493",
+			["SkyboxRt"] = "rbxassetid://218957134",
+			["SkyboxUp"] = "rbxassetid://218950090"
+		},
+		["Redshift"] = {
+			["SkyboxBk"] = "rbxassetid://401664839",
+			["SkyboxDn"] = "rbxassetid://401664862",
+			["SkyboxFt"] = "rbxassetid://401664960",
+			["SkyboxLf"] = "rbxassetid://401664881",
+			["SkyboxRt"] = "rbxassetid://401664901",
+			["SkyboxUp"] = "rbxassetid://401664936"
+		},
+		["Aesthetic Night"] = {
+			["SkyboxBk"] = "rbxassetid://1045964490",
+			["SkyboxDn"] = "rbxassetid://1045964368",
+			["SkyboxFt"] = "rbxassetid://1045964655",
+			["SkyboxLf"] = "rbxassetid://1045964655",
+			["SkyboxRt"] = "rbxassetid://1045964655",
+			["SkyboxUp"] = "rbxassetid://1045962969"
+		}
+	}
+}
 
+local Misc = {
+	AutoJumpKey = false,
+	FlyKey = false,
+	SpeedKey = false
 }
 
 local ESP = {
 	Players = {}
+}
+
+local Network = {
+	Connections = {},
+	Client = nil
 }
 
 local Moonlight = {
@@ -125,7 +226,9 @@ local Moonlight = {
 		Utility = Utility,
 		Legitbot = Legitbot,
 		Visuals = Visuals,
-		ESP = ESP
+		ESP = ESP,
+		Network = Network,
+		Hook = Hook
 	}
 }
 
@@ -268,6 +371,14 @@ do
 		for _,v in next, Utility.Objects do
 			v:Destroy()
 		end
+
+		for _,v in next, Utility.BindToRenders do
+			RunService:UnbindFromRenderStep(v)
+		end
+
+		Network:Unload()
+
+		Env.Moonlight = nil
 	end
 	function Utility:RotateVector2(vector, angle)
         local x = vector.x
@@ -281,6 +392,16 @@ do
 	function Utility:Lerp(start, endpos, status)
         return start + (endpos - start) * status
     end
+	function Utility:BindToRenderStep(name, enum, callback)
+        RunService:BindToRenderStep(name, enum, callback)
+    
+        Utility.BindToRenders[name] = name
+	end
+	function Utility:UnbindFromRenderStep(name)
+		RunService:UnbindFromRenderStep(name)
+
+		Utility.BindToRenders[name] = nil
+	end
 	--
 
 	-- Game Functions
@@ -345,8 +466,69 @@ do
 
 		return WeaponController and WeaponController._activeWeaponRegistry[WeaponController._activeWeaponIndex] or nil, WeaponController
 	end
+	function Utility:Trajectory(o, a, t, s, e): Vector3
+        local f = -a
+        local ld = t - o
+        local a = Vector3zero.Dot(f, f)
+        local b = 4 * Vector3zero.Dot(ld, ld)
+        local k = (4 * (Vector3zero.Dot(f, ld) + s * s)) / (2 * a)
+        local v = (k * k - b / a) ^ 0.5
+        local t, t0 = k - v, k + v
 
+        t = t < 0 and t0 or t
+        t = t ^ 0.5
+        return f * t / 2 + (e or Vector3zero) + ld / t, t
+    end
 	--
+end --
+
+-- Network
+do
+	if not Network.Client then
+		Network.Client = NetworkClient
+
+		if not Network.Client then
+			for i = 1, 5 do
+				Library:Notify({ title = "Error", message = "!!IMPORTANT!! Failed to fetch network client. Please screenshot your F9 console and send it to cheat-developers.", duration = 20 })
+			end
+		end
+	end
+
+	function Network:Send(command, ...)
+		if not Network.Client then
+			return
+		end
+
+		Network.Client.send(self, command, ...)
+	end
+
+	function Network:Connect(func)
+		if not Network.Client then
+			return
+		end
+
+		Network.Connections[#Network.Connections + 1] = func
+	end
+
+	local OldNetwork = Network.Client.send
+
+	Network.Client.send = function(self, command, ...)
+		local Args = {...}
+
+		for _,v in next, Network.Connections do
+			Args = v(command, unpack(Args))
+		end
+
+		if not Args then
+			return
+		end
+
+		return OldNetwork(self, command, unpack(Args))
+	end
+
+	function Network:Unload()
+		Network.Client.send = OldNetwork
+	end
 end --
 
 -- Handlers
@@ -354,6 +536,22 @@ do
 	Library:Connect(UserInputService.InputBegan, LPH_NO_VIRTUALIZE(function(input)
 		if input.UserInputType == Library.flags["aim_assist_key"] or input.KeyCode == Library.flags["aim_assist_key"] then
 			Legitbot.Aimbot.KeybindStatus = true
+		end
+
+		if input.UserInputType == Library.flags["silent_aim_key"] or input.KeyCode == Library.flags["silent_aim_key"] then
+			Legitbot.SilentAim.KeybindStatus = true
+		end
+
+		if input.UserInputType == Library.flags["auto_jump_key"] or input.KeyCode == Library.flags["auto_jump_key"] then
+			Misc.AutoJumpKey = true
+		end
+
+		if input.UserInputType == Library.flags["speed_key"] or input.KeyCode == Library.flags["speed_key"] then
+			Misc.SpeedKey = not Misc.SpeedKey
+		end
+
+		if input.UserInputType == Library.flags["fly_key"] or input.KeyCode == Library.flags["fly_key"] then
+			Misc.FlyKey = not Misc.FlyKey
 		end
 	end))
 
@@ -364,6 +562,14 @@ do
 	Library:Connect(UserInputService.InputEnded, LPH_NO_VIRTUALIZE(function(input)
 		if input.UserInputType == Library.flags["aim_assist_key"] or input.KeyCode == Library.flags["aim_assist_key"] then
 			Legitbot.Aimbot.KeybindStatus = false
+		end
+
+		if input.UserInputType == Library.flags["silent_aim_key"] or input.KeyCode == Library.flags["silent_aim_key"] then
+			Legitbot.SilentAim.KeybindStatus = false
+		end
+
+		if input.UserInputType == Library.flags["auto_jump_key"] or input.KeyCode == Library.flags["auto_jump_key"] then
+			Misc.AutoJumpKey = false
 		end
 	end))
 
@@ -401,7 +607,7 @@ do
 		}),
 	}
 
-	Library:Connect(RunService.Heartbeat, LPH_JIT_MAX(function() -- Aim Assist
+	Library:Connect(RunService.Heartbeat, LPH_JIT_MAX(function()
 		local Weapon, WeaponController = Utility:GetLocalWeapon()
 
 		Aimbot.Targets = {}
@@ -493,9 +699,11 @@ do
 
 				local HeadPosMagnitude = (ScreenHeadPos - Aimbot.Position).Magnitude
 				
-				Hitbox = HeadPosMagnitude > AimbotMagnitude and Head or Torso
+				Hitbox = HeadPosMagnitude < AimbotMagnitude and Head or Torso
 			end
 			
+			local HitboxPosition = Hitbox.Position + (Library.Flags["silent_aim_pred"] and Hitbox.Velocity * (LocalPlayer:GetNetworkPing() * 1.15) or Vector3zero)
+
 			local ScreenMagnitude = (ScreenPos - (ScreenSize / 2)).Magnitude
 
 			local Health = Utility:GetHealth(v)
@@ -505,7 +713,8 @@ do
 				["Health"] = Health,
 				["Magnitude"] = ScreenMagnitude,
 				["Distance"] = DistanceFromTorso,
-				["Hitbox"] = Hitbox
+				["Hitbox"] = Hitbox,
+				["HitboxPosition"] = HitboxPosition
 			})
 		end
 		
@@ -526,16 +735,14 @@ do
 
 		if #Aimbot.Targets > 0 then
 			local Target = Aimbot.Targets[1]
-			local Hitbox = Target.Hitbox
+			local Hitbox = Target.HitboxPosition
 
 			Aimbot.Target = Target.Player
 
 			if Hitbox then
-				local Pos, OnScreen = Camera:WorldToViewportPoint(Hitbox.Position)
+				local Pos, OnScreen = Camera:WorldToViewportPoint(Hitbox)
 
 				if Pos and OnScreen then
-					Pos = Pos + (Library.Flags["aim_assist_pred"] and Hitbox.Velocity or Vector3zero)
-
 					local ScreenPos = Vector2new(Pos.x, Pos.y)
 
 					local SmoothX = Library.Flags["aim_assist_smoothness_horizontal"] + 1
@@ -549,12 +756,166 @@ do
 	--
 
 	-- Silent Aim
+	local SilentAim = Legitbot.SilentAim
 
-	--
+	SilentAim.Circles = {
+		Fov = Utility:New("Circle", {
+			Visible = false,
+			Transparency = 1,
+		}),
+		Deadzone = Utility:New("Circle", {
+			Visible = false,
+			Transparency = 1,
+		}),
+	}
+
+	Library:Connect(RunService.Heartbeat, LPH_JIT_MAX(function()
+		local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+		SilentAim.Targets = {}
+
+		local CharacterObject = CharacterInterface.getCharacterObject()
+
+		local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+
+		local Origin = HumanoidRootPart and HumanoidRootPart.Position or Camera.CFrame.p
+
+		local ScopeValueSpring = 1 - mathclamp(CharacterObject and CharacterObject:getSpring("zoommodspring").p or 1, 0, 1)
+
+		SilentAim.Position = Library.Flags["silent_aim_hitscan_pos"] == "Barrel" 
+			and BarrelPosition 
+			and Vector2new(
+				Utility:Lerp(ScreenSize.x / 2, BarrelPosition.x, ScopeValueSpring),
+				Utility:Lerp(ScreenSize.y / 2, BarrelPosition.y, ScopeValueSpring)
+			)
+			or ScreenSize / 2
+
+		if Library.flags["silent_aim_enabled"] and SilentAim.KeybindStatus and not Library.open then
+			for _,v in next, Players:GetPlayers() do
+				if v == LocalPlayer then
+					continue
+				end
+
+				if v.Team == LocalPlayer.Team then
+					continue
+				end
+
+				if not Utility:IsAlive(v) then
+					continue
+				end
+
+				local Character = Utility:GetCharacter(v)
+				local Torso = Character and Character.Torso or nil
+				local Head = Character and Character.Head or nil
+				
+				if not (Character and Torso and Head) then
+					continue
+				end
+
+				local Pos, OnScreen = Camera:WorldToViewportPoint(Torso.Position)
+
+				if not (Pos and OnScreen) then
+					continue
+				end
+				
+				local ScreenPos = Vector2new(Pos.x, Pos.y)
+				local DistanceFromTorso = (Torso.Position - Origin).Magnitude
+
+				if Library.Flags["silent_aim_limit"] and Library.Flags["silent_aim_max_distance"] < DistanceFromTorso then
+					continue
+				end
+
+				local Direction = (Head.Position - Origin)
+				if Library.flags["silent_aim_visible_check"] and workspace:Raycast(Origin, Direction, RayParams) then
+					continue
+				end
+
+				local SilentAimMagnitude = (ScreenPos - SilentAim.Position).Magnitude
+
+				if Library.Flags["silent_aim_fov"] < SilentAimMagnitude then
+					continue
+				end
+				
+				if Library.Flags["silent_aim_deadzone"] > 0 and Library.Flags["silent_aim_deadzone"] > SilentAimMagnitude then
+					continue
+				end
+
+				local Hitbox = nil
+
+				if Library.Flags["silent_aim_hitscan"] == "Head" then
+					Hitbox = Head
+				elseif Library.Flags["silent_aim_hitscan"] == "Torso" then
+					Hitbox = Torso
+				else
+					local HeadPos = Camera:WorldToViewportPoint(Head.Position)
+
+					local ScreenHeadPos = Vector2new(HeadPos.x, HeadPos.y)
+
+					local HeadPosMagnitude = (ScreenHeadPos - SilentAim.Position).Magnitude
+					
+					Hitbox = HeadPosMagnitude < SilentAimMagnitude and Head or Torso
+				end
+				
+				local ScreenMagnitude = (ScreenPos - (ScreenSize / 2)).Magnitude
+
+				local HitboxPosition = Hitbox.Position + (Library.Flags["silent_aim_pred"] and Hitbox.Velocity * (LocalPlayer:GetNetworkPing() * 1.15) or Vector3zero)
+
+				local Health = Utility:GetHealth(v)
+
+				tableinsert(SilentAim.Targets, {
+					["Player"] = v,
+					["Health"] = Health,
+					["Magnitude"] = ScreenMagnitude,
+					["Distance"] = DistanceFromTorso,
+					["Hitbox"] = Hitbox,
+					["HitboxPosition"] = HitboxPosition
+				})
+			end
+		end
+		
+		-- "Screen", "Health", "Distance"
+		if Library.flags["silent_aim_target_selection"] == "Screen" then
+			tablesort(SilentAim.Targets, function(index1, index2)
+                return index1.Magnitude < index2.Magnitude
+			end)
+  		elseif Library.flags["silent_aim_target_selection"] == "Health" then
+			tablesort(SilentAim.Targets, function(index1, index2)
+				return index1.Health < index2.Health
+			end)
+		elseif Library.flags["silent_aim_target_selection"] == "Distance" then
+			tablesort(SilentAim.Targets, function(index1, index2)
+				return index1.Distance < index2.Distance
+			end)
+		end
+
+		SilentAim.Target = #SilentAim.Targets > 0 and SilentAim.Targets[1] or nil
+	end))
+
+	local OldBulletObject = BulletObject.new
+	BulletObject.new = function(data)
+		-- if not (Env.Moonlight and LPH_OBFUSCATED) then
+		-- 	BulletObject.new = OldBulletObject
+		-- end
+
+		--if Env.Moonlight then
+			local Target = Legitbot.SilentAim.Target
+
+			if Target then
+				local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+				if Weapon then
+					local Trajectory = Utility:Trajectory(data.position, -Gravity, Target.HitboxPosition, Weapon._weaponData.bulletspeed)
+
+					data.velocity = Trajectory
+				end
+			end
+		--end
+
+		return OldBulletObject(data)
+	end
 
 	-- FOV Circles
 	Library:Connect(RunService.Heartbeat, LPH_JIT_MAX(function() -- Aim Assist
-
 		local Fov = Aimbot.Circles.Fov
 		local Deadzone = Aimbot.Circles.Deadzone
 
@@ -584,8 +945,377 @@ end --
 
 -- Visuals
 do
+	function Visuals:ApplyChams(part, material, color, transparency, decal, reflectance)
+		if part:IsA("BasePart") and part.Transparency < 1 then
+			local Material = Visuals.Materials[material]
+			local Texture = Visuals.Textures[decal]
+
+            if part:FindFirstChildOfClass("SpecialMesh") then
+                local Mesh = part:FindFirstChildOfClass("SpecialMesh")
+                Mesh.TextureId = Texture
+                Mesh.VertexColor = Vector3.new(color.R, color.G, color.B)
+            end
+
+            if part:FindFirstChildOfClass("MeshPart") then
+                local Mesh = part:FindFirstChildOfClass("MeshPart")
+                Mesh.TextureId = Texture
+                Mesh.VertexColor = Vector3.new(color.R, color.G, color.B)
+            end
+
+			if part.ClassName == "UnionOperation" then
+                part.UsePartColor = true
+            end
+    
+            if part:FindFirstChild("SurfaceAppearance") then
+                part.SurfaceAppearance:Destroy()
+            end
+
+			part.Color = color
+            part.Material = material
+            part.Transparency = 1 - (transparency / 255)
+			part.Reflectance = reflectance / 50
+		end
+	end
+
+	function Visuals:RemoveTextures(part)
+		for _,instance in next, part:GetChildren() do
+            if instance:IsA("Texture") or instance:IsA("Decal") then
+                instance:Destroy()
+            end
+        end
+	end
+
+	function Visuals:UpdateWeapon()
+        local CameraChildren = Camera:GetChildren()
+
+		if Library.Flags["gun_chams"] then
+			for _,part in next, CameraChildren do
+				if part.Name:lower():find("main") and #part:GetChildren() > 0 then
+					Visuals:RemoveTextures(part)
+
+					for _,childPart in next, part:GetChildren() do
+						Visuals:ApplyChams(
+							childPart, 
+							Library.Flags["gun_chams_material"], 
+							Library.Flags["gun_chams_color"], 
+							Library.Flags["gun_chams_trans"], 
+							Library.Flags["gun_chams_decal"], 
+							Library.Flags["gun_chams_reflection"]
+						)
+					end
+				end
+			end
+		end
+    end
+
+	function Visuals:UpdateArms()
+        local CameraChildren = Camera:GetChildren()
+
+		if Library.Flags["arm_chams"] then
+			for _,part in next, CameraChildren do
+				print(part.Name)
+
+				if not part.Name:lower():find("main") and #part:GetChildren() > 0 then
+					Visuals:RemoveTextures(part)
+
+					for _,childPart in next, part:GetChildren() do
+						if childPart.Name == "Sleeves" then
+							childPart:Destroy()
+						else
+							Visuals:ApplyChams(
+								childPart, 
+								Library.Flags["arm_chams_material"], 
+								Library.Flags["arm_chams_color"], 
+								Library.Flags["arm_chams_trans"], 
+								Library.Flags["arm_chams_decal"], 
+								Library.Flags["arm_chams_reflection"]
+							)
+						end
+					end
+				end
+			end
+		end
+	end
+
+	function Visuals:UpdateViewmodel()
+		Visuals:UpdateWeapon()
+
+		Visuals:UpdateArms()
+	end
+
+	Library:Connect(Camera.ChildAdded, function()
+		Visuals:UpdateViewmodel()
+	end)
+
+	Library:Connect(RunService.Heartbeat, function()
+		local CharacterObject = CharacterInterface.getCharacterObject()
+
+        if Library.Flags["brightness"] and Lighting.Brightness ~= (Library.Flags["brightness"] * 2) / 100 then
+            Lighting.Brightness = (Library.Flags["brightness"] * 2) / 100
+        end	
+
+		if Library.Flags["ambience"] then
+			if Lighting.Ambient ~= Library.Flags["ambience_inside"] then
+                Lighting.Ambient = Library.Flags["ambience_inside"]
+            end
+
+            if Lighting.OutdoorAmbient ~= Library.Flags["ambience_outside"] then
+                Lighting.OutdoorAmbient = Library.Flags["ambience_outside"]
+            end
+		end
+
+		if Library.Flags["skybox_changer"] and Library.Flags["skybox_changer"] ~= "Off" then
+            local Sky = Lighting:FindFirstChildOfClass("Sky")
+            if Sky then
+                for _,v in next, Visuals.Skyboxes[Library.Flags["skybox_changer"]] do
+                    if Sky[_] ~= v then
+                        Sky[_] = v
+                    end
+                end
+            else
+                Instance.new("Sky", Lighting)
+            end
+        end
+		
+		if CharacterInterface.isAlive() then
+			if Library.Flags["fov_changer"] then
+				if CharacterObject.unaimedfov ~= Library.Flags["fov_changer_amount"] then
+					CharacterObject.unaimedfov = Library.Flags["fov_changer_amount"]
+				end
+			end
+		end
+	end)
+
+	Utility:BindToRenderStep("Camera Visuals", 1, function()
+		local CharacterObject = CharacterInterface.getCharacterObject()
+
+		if CharacterInterface.isAlive() then
+			local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+			if Weapon and WeaponController then
+				local MainOffset = Weapon:getWeaponStat("mainoffset")
+				
+				if Library.Flags["viewmodel"] then
+					local ScopeValueSpring = 1 - mathclamp(CharacterObject and CharacterObject:getSpring("zoommodspring").p or 1, 0, 1)
+				
+					local ViewmodelPosition = MainOffset * CFramenew(
+						(Library.Flags["viewmodel_x"] / 2) * ScopeValueSpring,
+						(Library.Flags["viewmodel_y"] / 2) * ScopeValueSpring,
+						(Library.Flags["viewmodel_z"] / 2) * ScopeValueSpring
+					) * CFrame.Angles(
+						mathrad(Library.Flags["viewmodel_pitch"] * ScopeValueSpring),
+						mathrad(Library.Flags["viewmodel_yaw"] * ScopeValueSpring),
+						mathrad(Library.Flags["viewmodel_roll"] * ScopeValueSpring)
+					)
+
+					Weapon._mainOffset = ViewmodelPosition
+				else
+					Weapon._mainOffset = MainOffset
+				end
+			end
+		end
+	end)
+
+	-- Visuals Hooks
+
+	--Camera Stuff
+	local OldCameraSway = CameraObject.setSway
+	CameraObject.setSway = function(idk, amount)
+		-- 							 ^ wtf is this argument LOL
+
+		if Library.Flags["remove_sway"] then
+			amount = 0
+		end
+
+		return OldCameraSway(idk, amount)
+	end 
+
+	local OldCameraDelta = CameraObject.getDelta
+	CameraObject.getDelta = function(...)
+        if Library.Flags["remove_sway"] then
+            return CFramenew()
+        end
+
+        return OldCameraDelta(...)
+    end
+
+	local OldCameraShake = CameraObject.getShake
+	CameraObject.getShake = function(...)
+        if Library.Flags["remove_sway"] then
+            return CFramenew()
+        end
+
+        return OldCameraShake(...)
+    end
+
+	local OldCameraImpulse = CameraObject.applyImpulse
+	CameraObject.applyImpulse = function(...)
+        if Library.Flags["remove_shake"] then
+            return
+        end
+
+        return OldCameraImpulse(...)
+    end
 	
+	--
+	
+
+	-- Firearm Stuff
+	local OldGunSway = FirearmObject.gunSway
+    FirearmObject.gunSway = function(...)
+        if Library.Flags["remove_sway"] then
+            return CFramenew()
+        end
+
+        return OldGunSway(...)
+    end
+
+	local OldGunWalkSway = FirearmObject.walkSway
+    FirearmObject.walkSway = function(...)
+        if Library.Flags["remove_bob"] then
+            return CFramenew()
+        end
+
+        return OldGunWalkSway(...)
+    end
+	--
+
+	-- Melee Stuff
+	local OldMeleeSway = MeleeObject.meleeSway
+    MeleeObject.meleeSway = function(...)
+        if Library.Flags["remove_sway"] then
+            return CFramenew()
+        end
+
+        return OldMeleeSway(...)
+    end
+
+	local OldMeleeWalkSway = MeleeObject.walkSway
+    MeleeObject.walkSway = function(...)
+        if Library.Flags["remove_bob"] then
+            return CFramenew()
+        end
+
+        return OldMeleeWalkSway(...)
+    end
+	--
 end --
+
+-- Misc
+do
+	Library:Connect(RunService.RenderStepped, LPH_JIT_MAX(function()
+		local CharacterObject = CharacterInterface.getCharacterObject() or nil
+        local Humanoid = CharacterObject and CharacterObject._humanoid
+        local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+		local Looking = Camera.CFrame.lookVector
+
+		if Humanoid and HumanoidRootPart then
+            if Library.Flags["auto_jump"] and Misc.AutoJumpKey and Humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
+                Humanoid.Jump = true
+            end
+
+			local Velocity = Vector3zero
+
+			local CanSpeedHack = 
+				Library.Flags["speed_type"] == "In Air" 
+					and Humanoid.FloorMaterial ~= Enum.Material.Air 
+					and not Humanoid.Jump 
+				or
+				Library.Flags["speed_type"] == "On Hop"
+					and Humanoid.Jump
+				or 
+				Library.Flags["speed_type"] == "Always"
+			
+			if Library.Flags["fly"] and CanSpeedHack then
+				if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+					Velocity += Looking
+				end
+	
+				if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+					Velocity -= Looking
+				end
+	
+				if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+					Velocity += Vector3new(-Looking.z, 0, Looking.x)
+				end
+	
+				if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+					Velocity += Vector3new(Looking.z, 0, -Looking.x)
+				end
+	
+				if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+					Velocity += Vector3new(0, 1, 0)
+				end
+	
+				if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+					Velocity -= Vector3new(0, 1, 0)
+				end
+
+				if Velocity.Magnitude > 0 then
+					HumanoidRootPart.Anchored = false
+					HumanoidRootPart.Velocity = Velocity.Unit * Library.Flags["fly_speed"]
+				else
+					HumanoidRootPart.Anchored = true
+					HumanoidRootPart.Velocity = Vector3zero
+				end
+			else
+				HumanoidRootPart.Anchored = false
+				
+				if Library.Flags["speed"] and CanSpeedHack then
+					if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+						Velocity += Vector3new(Looking.x, 0, Looking.z)
+					end
+		
+					if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+						Velocity -= Vector3new(Looking.x, 0, Looking.z)
+					end
+					
+					if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+						Velocity += Vector3new(-Looking.z, 0, Looking.x)
+					end
+		
+					if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+						Velocity += Vector3new(Looking.z, 0, -Looking.x)
+					end
+
+					if Velocity.Magnitude > 0 then
+						Velocity = Velocity.Unit * Library.Flags["speed_speed"]
+
+						Velocity = Vector3new(Velocity.x, HumanoidRootPart.Velocity.y, Velocity.z)
+
+						HumanoidRootPart.Velocity = Velocity
+					end
+				end
+			end
+		end
+	end))
+end
+
+-- Network Handler
+do
+	Network:Connect(LPH_JIT_MAX(function(command, ...)
+		local Args = {...}
+
+		if command == "newbullets" then
+			local Target = Legitbot.SilentAim.Target
+
+			if Target then
+				local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+				if Weapon and WeaponController then
+					local Trajectory = Utility:Trajectory(Args[2].firepos, -Gravity, Target.HitboxPosition, Weapon._weaponData.bulletspeed)
+
+					for i = 1, #Args[2].bullets do
+						Args[2].bullets[i][1] = Trajectory
+					end
+				end
+			end
+		end
+
+		return Args
+	end))
+end
+--
 
 -- ESP
 do
@@ -678,7 +1408,7 @@ do
 	function ESP:GetColor(player)
 		-- ill add checks if target n shit
 
-		return Library.Flags["esp_highlight_target"] and Legitbot.Aimbot.Target == player and Library.Flags["esp_highlight_target_color"] or Library.Flags["esp_highlight_friend"] and Library.Playerlist:IsTagged(player, "Friended") and Library.Flags["esp_highlight_friend_color"] or Library.Flags["esp_highlight_priority"] and Library.Playerlist:IsTagged(player, "Prioritized") and Library.Flags["esp_highlight_priority_color"] or nil
+		return Library.Flags["esp_highlight_target"] and (Legitbot.Aimbot.Target == player or Legitbot.SilentAim.Target and Legitbot.SilentAim.Target.Player == player) and Library.Flags["esp_highlight_target_color"] or Library.Flags["esp_highlight_friend"] and Library.Playerlist:IsTagged(player, "Friended") and Library.Flags["esp_highlight_friend_color"] or Library.Flags["esp_highlight_priority"] and Library.Playerlist:IsTagged(player, "Prioritized") and Library.Flags["esp_highlight_priority_color"] or nil
 	end
 
 	function ESP:NewPlayer(player)
@@ -975,15 +1705,15 @@ do
 
 	-- Tabs
 	local LegitTab = Window:Tab("  Legit")
-	--local RageTab = Window:Tab("Rage")
+	local RageTab = Window:Tab("Rage")
 	local PlayersTab = Window:Tab("Players")
 	local VisualsTab = Window:Tab("Visuals")
-	--local MiscTab = Window:Tab("Misc")
+	local MiscTab = Window:Tab("Misc")
 	--
 
 	-- Toggles
 	local AimAssist = LegitTab:Section({ name = "Aim Assist", side = "left" })
-	AimAssist:Toggle({ name = "Enabled", flag = "aim_assist_enabled" })
+	AimAssist:Toggle({ name = "Aim Assist", flag = "aim_assist_enabled" })
 		:Keybind({ name = "Aim Assist", listignored = false, mode = "hold", blacklist = {}, flag = "aim_assist_key" })
 	AimAssist:Toggle({ name = "Visible Check", flag = "aim_assist_visible_check" })
 	AimAssist:Toggle({ name = "Predict Velocity", flag = "aim_assist_pred" })
@@ -1000,24 +1730,30 @@ do
 	AimAssist:Dropdown({ name = "Hitscan Position", content = { "Screen", "Barrel" }, multi = false, flag = "aim_assist_hitscan_pos" })
 		:Set("Screen")
 
-	--[[ local BulletRedirection = LegitTab:Section({ name = "Bullet Redirection", side = "middle" })
-	BulletRedirection:Toggle({ name = "Enabled", flag = "bullet_redirection_enabled" })
-	BulletRedirection:Toggle({ name = "Visible Check", flag = "bullet_redirection_visible_check" })
-	-- BulletRedirection:Toggle({ name = "Team Check", flag = "bullet_redirection_team_check" })
-	BulletRedirection:Separator()
-	BulletRedirection:Slider({ name = "Field of View", default = 70, float = 1, suffix = "°", min = 0, max = 180, flag = "bullet_redirection_fov" })
-	BulletRedirection:Slider({ name = "Deadzone", default = 5, float = 1, suffix = "°", min = 0, max = 50, flag = "bullet_redirection_deadzone" })
-	BulletRedirection:Separator()
-	BulletRedirection:Dropdown({ name = "Hitscan", content = { "Head", "Upper Torso", "Lower Torso", "Arms", "Legs" }, multi = true, flag = "bullet_redirection_hitscan" })
-	BulletRedirection:Dropdown({ name = "Hitscan Priority", content = { "Head", "Upper Torso", "Lower Torso", "Arms", "Legs" }, multi = false, flag = "bullet_redirection_hitscan_priority" })
+	local BulletRedirection = LegitTab:Section({ name = "Bullet Redirection", side = "middle" })
+	BulletRedirection:Toggle({ name = "Silent Aim", flag = "silent_aim_enabled" })
+		:Keybind({ name = "Silent Aim", listignored = false, mode = "hold", blacklist = {}, flag = "silent_aim_key" })
+	BulletRedirection:Toggle({ name = "Visible Check", flag = "silent_aim_visible_check" })
+	BulletRedirection:Toggle({ name = "Predict Velocity", flag = "silent_aim_pred" })
+	BulletRedirection:Slider({ name = "Field of View", default = 70, float = 1, suffix = "°", min = 1, max = 360, flag = "silent_aim_fov" })
+	BulletRedirection:Slider({ name = "Deadzone", default = 5, float = 1, suffix = "°", min = 0, max = 50, flag = "silent_aim_deadzone" })
+	BulletRedirection:Toggle({ name = "Limit Distance", flag = "silent_aim_limit" })
+	BulletRedirection:Slider({ name = "Maximum Distance", default = 300, float = 1, suffix = " studs", min = 0, max = 5000, flag = "silent_aim_max_distance" })
+	BulletRedirection:Slider({ name = "Hitchance", default = 80, float = 1, suffix = "%", min = 1, max = 100, flag = "silent_aim_hitchance" })
+	BulletRedirection:Dropdown({ name = "Target Selection", content = { "Screen", "Health", "Distance" }, multi = false, flag = "silent_aim_target_selection" })
+		:Set("Screen")
+	BulletRedirection:Dropdown({ name = "Hitscan", content = { "Head", "Torso", "Closest" }, multi = false, flag = "silent_aim_hitscan" })
+		:Set("Head")
+	BulletRedirection:Dropdown({ name = "Hitscan Position", content = { "Screen", "Barrel" }, multi = false, flag = "silent_aim_hitscan_pos" })
+		:Set("Screen")
 
-	local TriggerbotSection = LegitTab:Section({ name = "Triggerbot", side = "right" })
-	TriggerbotSection:Toggle({ name = "Enabled", flag = "triggerbot_enabled" })
-	TriggerbotSection:Toggle({ name = "Visible Check", flag = "triggerbot_visible_check" })
-	-- TriggerbotSection:Toggle({ name = "Team Check", flag = "triggerbot_team_check" })
-	TriggerbotSection:Separator()
-	TriggerbotSection:Slider({ name = "Delay", default = 120, float = 1, suffix = "ms", min = 0, max = 1000, flag = "triggerbot_delay" })
-	TriggerbotSection:Dropdown({ name = "Hitscan", content = { "Head", "Upper Torso", "Lower Torso", "Arms", "Legs" }, multi = true, flag = "triggerbot_hitscan" }) ]]
+	-- local TriggerbotSection = LegitTab:Section({ name = "Triggerbot", side = "right" })
+	-- TriggerbotSection:Toggle({ name = "Enabled", flag = "triggerbot_enabled" })
+	-- TriggerbotSection:Toggle({ name = "Visible Check", flag = "triggerbot_visible_check" })
+	-- -- TriggerbotSection:Toggle({ name = "Team Check", flag = "triggerbot_team_check" })
+	-- TriggerbotSection:Separator()
+	-- TriggerbotSection:Slider({ name = "Delay", default = 120, float = 1, suffix = "ms", min = 0, max = 1000, flag = "triggerbot_delay" })
+	-- TriggerbotSection:Dropdown({ name = "Hitscan", content = { "Head", "Upper Torso", "Lower Torso", "Arms", "Legs" }, multi = true, flag = "triggerbot_hitscan" }) ]]
 	
 	local ESP_Types = {
 		["Enemy"] = {
@@ -1032,35 +1768,35 @@ do
 
 	for _,v in next, ESP_Types do
 		local ESP = PlayersTab:Section({ name = _, side = v.Side })
-		ESP:Toggle({ name = "Enabled", default = false, flag = v.Flag .. "enabled" })
-		local BoxESP = ESP:Toggle({ name = "Box", default = false, flag = v.Flag .. "box" })
+		ESP:Toggle({ name = "Enabled", flag = v.Flag .. "enabled" })
+		local BoxESP = ESP:Toggle({ name = "Box", flag = v.Flag .. "box" })
 			BoxESP:Colorpicker({ name = "Box Color", default = Color3fromRGB(255, 0, 0), flag = v.Flag .. "box_color"})
 			BoxESP:Colorpicker({ name = "Box Outline Color", default = Color3fromRGB(0, 0, 0), flag = v.Flag .. "box_outline"})
-		ESP:Toggle({ name = "Box Fill", default = false, flag = v.Flag .. "box_fill" })
+		ESP:Toggle({ name = "Box Fill", flag = v.Flag .. "box_fill" })
 			:Colorpicker({ name = "Box Fill Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "box_fill_color"})
 		ESP:Slider({ name = "Box Fill Transparency", default = 0, float = 1, min = 1, max = 255, flag = v.Flag .. "box_fill_a" })
-		ESP:Toggle({ name = "Name", default = false, flag = v.Flag .. "name" })
+		ESP:Toggle({ name = "Name", flag = v.Flag .. "name" })
 			:Colorpicker({ name = "Name Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "name_color"})
-		local HealthBar = ESP:Toggle({ name = "Health Bar", default = false, flag = v.Flag .. "health" })
+		local HealthBar = ESP:Toggle({ name = "Health Bar", flag = v.Flag .. "health" })
 			HealthBar:Colorpicker({ name = "Health Bar Color", default = Color3fromRGB(0, 255, 0), flag = v.Flag .. "health_color"})
 			HealthBar:Colorpicker({ name = "Health Bar Outline Color", default = Color3fromRGB(0, 0, 0), flag = v.Flag .. "health_outline"})
-		ESP:Toggle({ name = "Health Number", default = false, flag = v.Flag .. "health_number" })
+		ESP:Toggle({ name = "Health Number", flag = v.Flag .. "health_number" })
 			:Colorpicker({ name = "Health Number Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "health_number_color"})
-		ESP:Toggle({ name = "Follow Health Bar", default = false, flag = v.Flag .. "health_number_follow" })
-		ESP:Toggle({ name = "Distance", default = false, flag = v.Flag .. "distance" })
+		ESP:Toggle({ name = "Follow Health Bar", flag = v.Flag .. "health_number_follow" })
+		ESP:Toggle({ name = "Distance", flag = v.Flag .. "distance" })
 			:Colorpicker({ name = "Distance Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "distance_color"})
-		ESP:Toggle({ name = "Weapon", default = false, flag = v.Flag .. "weapon" })
+		ESP:Toggle({ name = "Weapon", flag = v.Flag .. "weapon" })
 			:Colorpicker({ name = "Weapon Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "weapon_color"})
-		ESP:Toggle({ name = "Rank", default = false, flag = v.Flag .. "rank" })
+		ESP:Toggle({ name = "Rank", flag = v.Flag .. "rank" })
 			:Colorpicker({ name = "Rank Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "rank_color"})
-		ESP:Toggle({ name = "Team", default = false, flag = v.Flag .. "team" })
+		ESP:Toggle({ name = "Team", flag = v.Flag .. "team" })
 			:Colorpicker({ name = "Team Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "team_color"})
-		ESP:Toggle({ name = "Use Team Color", default = false, flag = v.Flag .. "team_use_color" })
-		ESP:Toggle({ name = "Out of View", default = false, flag = v.Flag .. "oof" })
+		ESP:Toggle({ name = "Use Team Color", flag = v.Flag .. "team_use_color" })
+		ESP:Toggle({ name = "Out of View", flag = v.Flag .. "oof" })
 			:Colorpicker({ name = "Out of View Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "oof_color"})
 		ESP:Slider({ name = "Out of View Size", default = 13, float = 1, suffix = " px", min = 1, max = 30, flag = v.Flag .. "oof_size" })
 		ESP:Slider({ name = "Out of View Distance", default = 250, float = 1, suffix = " px", min = 1, max = 1920, flag = v.Flag .. "oof_distance" })
-		local Chams = ESP:Toggle({ name = "Chams", default = false, flag = v.Flag .. "chams" })
+		local Chams = ESP:Toggle({ name = "Chams", flag = v.Flag .. "chams" })
 			Chams:Colorpicker({ name = "Chams Color", default = Color3fromRGB(0, 187, 255), flag = v.Flag .. "chams_color"})
 			Chams:Colorpicker({ name = "Chams Outline Color", default = Color3fromRGB(0, 145, 255), flag = v.Flag .. "chams_outline"})
 		ESP:Slider({ name = "Chams Transparency", default = 200, float = 1, min = 1, max = 255, flag = v.Flag .. "chams_a" })
@@ -1068,28 +1804,118 @@ do
 	end
 
 	local ESPSettings = PlayersTab:Section({ name = "ESP Settings", side = "right" })
-	ESPSettings:Toggle({ name = "Limit Distance", default = false, flag = "esp_limit_distance" })
+	ESPSettings:Toggle({ name = "Limit Distance", flag = "esp_limit_distance" })
 	ESPSettings:Slider({ name = "Maximum Distance", default = 300, float = 1, suffix = " studs", min = 1, max = 5000, flag = "esp_limit_distance_amount" })
 	ESPSettings:Dropdown({ name = "ESP Font", content = { "Plex", "Monospace", "UI", "System" }, multi = false, flag = "esp_font" })
 		:Set("Plex")
 	ESPSettings:Slider({ name = "ESP Size", default = 14, float = 1, suffix = " px", min = 1, max = 30, flag = "esp_font_size" })
 	ESPSettings:Slider({ name = "Max HP Visibility Cap", default = 90, float = 1, suffix = " hp", min = 1, max = 100, flag = "max_hp_vis_cap" })
-	ESPSettings:Toggle({ name = "Highlight Target", default = false, flag = "esp_highlight_target" })
+	ESPSettings:Toggle({ name = "Highlight Target", flag = "esp_highlight_target" })
 		:Colorpicker({ name = "Highlight Target Color", default = Color3fromRGB(255, 0, 0), flag = "esp_highlight_target_color"})
-	ESPSettings:Toggle({ name = "Highlight Friend", default = false, flag = "esp_highlight_friend" })
+	ESPSettings:Toggle({ name = "Highlight Friend", flag = "esp_highlight_friend" })
 		:Colorpicker({ name = "Highlight Friend Color", default = Color3fromRGB(0, 166, 255), flag = "esp_highlight_friend_color"})
-	ESPSettings:Toggle({ name = "Highlight Priority", default = false, flag = "esp_highlight_priority" })
+	ESPSettings:Toggle({ name = "Highlight Priority", flag = "esp_highlight_priority" })
 		:Colorpicker({ name = "Highlight Priority Color", default = Color3fromRGB(0, 255, 157), flag = "esp_highlight_priority_color"})
-	
-	local Interface = VisualsTab:Section({ name = "Interface", side = "Left" })
-	Interface:Toggle({ name = "Aimbot FOV", default = false, flag = "aim_fov" })
+
+	local Interface = VisualsTab:Section({ name = "Interface", side = "right" })
+	Interface:Toggle({ name = "Aimbot FOV", flag = "aim_fov" })
 		:Colorpicker({ name = "Aimbot FOV Color", default = Color3fromRGB(255, 255, 255), flag = "aim_fov_color"})
 	Interface:Slider({ name = "Thickness", default = 1, float = 1, suffix = " px", min = 1, max = 30, flag = "aim_fov_thick" })
 	Interface:Slider({ name = "Num Sides", default = 30, float = 1, suffix = " sides", min = 1, max = 100, flag = "aim_fov_sides" })
-	Interface:Toggle({ name = "Aimbot Deadzone", default = false, flag = "aim_dead" })
+	Interface:Toggle({ name = "Aimbot Deadzone", flag = "aim_dead" })
 		:Colorpicker({ name = "Aimbot Deadzone Color", default = Color3fromRGB(255, 255, 255), flag = "aim_dead_color"})
 	Interface:Slider({ name = "Thickness", default = 1, float = 1, suffix = " px", min = 1, max = 30, flag = "aim_dead_thick" })
 	Interface:Slider({ name = "Num Sides", default = 30, float = 1, suffix = " sides", min = 1, max = 100, flag = "aim_dead_sides" })
+	local Crosshair = Interface:Toggle({ name = "Custom Crosshair", flag = "crosshair" })
+		Crosshair:Colorpicker({ name = "Crosshair Color", default = Color3fromRGB(255, 255, 255), flag = "crosshair_color"})
+		Crosshair:Colorpicker({ name = "Crosshair Outline", default = Color3fromRGB(0, 0, 0), flag = "crosshair_outline"})
+	Interface:Toggle({ name = "Spin Crosshair", flag = "crosshair_spin" })
+	Interface:Slider({ name = "Spin Speed", default = 5, float = 1, min = 1, max = 50, flag = "crosshair_spin_speed" })
+	Interface:Slider({ name = "Thickness", default = 1, float = 1, suffix = " px", min = 1, max = 30, flag = "crosshair_thick" })
+	Interface:Slider({ name = "Size", default = 5, float = 1, suffix = " px", min = 1, max = 30, flag = "crosshair_size" })
+	Interface:Slider({ name = "Gap", default = 5, float = 1, suffix = " px", min = 1, max = 30, flag = "crosshair_gap" })
+
+	local CameraVisuals = VisualsTab:Section({ name = "Local", side = "middle" })
+	CameraVisuals:Toggle({ name = "Fov Changer", flag = "fov_changer" })
+	CameraVisuals:Slider({ name = "Fov Amount", default = 90, suffix = "°", float = 1, min = 1, max = 120, flag = "fov_changer_amount" })
+	CameraVisuals:Toggle({ name = "Remove Viewmodel Bob", flag = "remove_bob", callback = function(v)
+		debug.setconstant(CameraObject.step, 22, v and 0 or 0.5)
+	end})
+	CameraVisuals:Toggle({ name = "Remove Viewmodel Sway", flag = "remove_sway" })
+	CameraVisuals:Toggle({ name = "Remove Camera Shake", flag = "remove_shake" })
+	CameraVisuals:Toggle({ name = "Viewmodel Changer", flag = "viewmodel" })
+	CameraVisuals:Slider({ name = "X Position", default = 0, float = 0.1, suffix = " studs", min = -5, max = 5, flag = "viewmodel_x" })
+	CameraVisuals:Slider({ name = "Y Position", default = 0, float = 0.1, suffix = " studs", min = -5, max = 5, flag = "viewmodel_y" })
+	CameraVisuals:Slider({ name = "Z Position", default = 0, float = 0.1, suffix = " studs", min = -5, max = 5, flag = "viewmodel_z" })
+	CameraVisuals:Slider({ name = "Pitch Position", default = 0, float = 1, suffix = "°", min = -180, max = 180, flag = "viewmodel_pitch" })
+	CameraVisuals:Slider({ name = "Yaw Position", default = 0, float = 1, suffix = "°", min = -180, max = 180, flag = "viewmodel_yaw" })
+	CameraVisuals:Slider({ name = "Roll Position", default = 0, float = 1, suffix = "°", min = -180, max = 180, flag = "viewmodel_roll" })
+
+
+	local Materials = {}
+
+	for _,v in next, Visuals.Materials do
+		Materials[#Materials + 1] = _
+	end
+
+	local Local, World = VisualsTab:multiSection({ Side = "left", Sections = { "Local", "World" } })
+
+	Local:Toggle({ name = "Gun Chams", flag = "gun_chams", callback = function() Visuals:UpdateWeapon() end })
+		:Colorpicker({ name = "Gun Chams Color", default = Color3fromRGB(255, 255, 255), flag = "gun_chams_color", callback = function() Visuals:UpdateWeapon() end})
+	Local:Dropdown({ name = "Gun Chams Material", content = Materials, multi = false, flag = "gun_chams_material", callback = function() Visuals:UpdateWeapon() end })
+		:Set("ForceField")
+	Local:Slider({ name = "Reflection", default = 1, float = 1, min = 1, max = 50, flag = "gun_chams_reflection", callback = function() Visuals:UpdateWeapon() end })
+	Local:Slider({ name = "Transparency", default = 100, float = 1, min = 1, max = 255, flag = "gun_chams_trans", callback = function() Visuals:UpdateWeapon() end })
+	
+	Local:Toggle({ name = "Arm Chams", flag = "arm_chams", callback = function() Visuals:UpdateArms() end })
+		:Colorpicker({ name = "Arm Chams Color", default = Color3fromRGB(255, 255, 255), flag = "arm_chams_color", callback = function() Visuals:UpdateArms() end})
+	Local:Dropdown({ name = "Arm Chams Material", content = Materials, multi = false, flag = "arm_chams_material", callback = function() Visuals:UpdateArms() end })
+		:Set("ForceField")
+	Local:Slider({ name = "Reflection", default = 1, float = 1, min = 1, max = 50, flag = "arm_chams_reflection", callback = function() Visuals:UpdateArms() end })
+	Local:Slider({ name = "Transparency", default = 100, float = 1, min = 1, max = 255, flag = "arm_chams_trans", callback = function() Visuals:UpdateArms() end })
+	
+	World:Toggle({ name = "Set Time", flag = "time_changer" })
+	World:Slider({ name = "Time Amount", default = 12, float = 0.1, min = 0, max = 24, flag = "time_changer_amount" })
+	local Ambience = World:Toggle({ name = "Ambience", flag = "ambience" })
+		Ambience:Colorpicker({ name = "Ambience Inside Color", default = Color3fromRGB(255, 255, 255), flag = "ambience_inside"})
+		Ambience:Colorpicker({ name = "Ambience Outside Color", default = Color3fromRGB(255, 255, 255), flag = "ambience_outside"})
+	World:Slider({ name = "Brightness", default = 50, float = 1, min = 0, max = 100, flag = "brightness" })
+	World:Dropdown({ name = "Technology Type", content = {"Legacy", "Voxel", "Compatibility", "ShadowMap", "Future"}, multi = false, flag = "technology_type", callback = function(v)
+		if v then
+			sethiddenproperty(Lighting, "Technology", Enum.Technology[v])
+		end
+	end}):Set("Legacy")
+
+	local Skyboxes = { "Off" }
+	for _,v in next, Visuals.Skyboxes do
+		Skyboxes[#Skyboxes + 1] = _
+	end
+
+	World:Dropdown({ name = "Skybox Changer", content = Skyboxes, multi = false, flag = "skybox_changer"})
+		:Set("Off")
+
+	local Movement = MiscTab:Section({ name = "Movement", side = "left" })
+	Movement:Toggle({ name = "Fly", flag = "fly" })
+		:Keybind({ name = "Fly", listignored = false, mode = "toggle", blacklist = {}, flag = "fly_key" })
+	Movement:Slider({ name = "Fly Speed", default = 50, float = 1, min = 1, max = 100, flag = "fly_speed" })
+	Movement:Toggle({ name = "Auto Jump", flag = "auto_jump" })
+		:Keybind({ name = "Auto Jump", listignored = false, mode = "hold", blacklist = {}, flag = "auto_jump_key" })
+	Movement:Toggle({ name = "Speed", flag = "speed" })
+		:Keybind({ name = "Speed", listignored = false, mode = "toggle", blacklist = {}, flag = "speed_key" })
+	Movement:Dropdown({ name = "Speed Type", content = {"Always", "In Air", "On Hop"}, multi = false, flag = "speed_type"})
+		:Set("Always")
+	Movement:Slider({ name = "Speed Factor", default = 50, float = 1, min = 1, max = 100, flag = "speed_speed" })
+	Movement:Toggle({ name = "Bypass Fall Damage", flag = "fall_damage" })
+
+	local Extra = MiscTab:Section({ name = "Extra", side = "right" })
+	Extra:Toggle({ name = "Hit Sound", flag = "hitsound_enabled" })
+	Extra:Slider({ name = "Volume", default = 50, float = 1, min = 0, max = 100, flag = "hitsound_volume" })
+	Extra:Slider({ name = "Pitch", default = 100, float = 1, min = 0, max = 200, flag = "hitsound_pitch" })
+	Extra:Box({ name = "Hit Sound ID", default = "6229978482", flag = "hitsound_id", clearonfocus = false })
+	Extra:Toggle({ name = "Kill Sound", flag = "killsound_enabled" })
+	Extra:Slider({ name = "Volume", default = 50, float = 1, min = 0, max = 100, flag = "killsound_volume" })
+	Extra:Slider({ name = "Pitch", default = 100, float = 1, min = 0, max = 200, flag = "killsound_pitch" })
+	Extra:Box({ name = "Kill Sound ID", default = "5709456554", flag = "killsound_id", clearonfocus = false })
 	--
 
 	-- Settings Tab
