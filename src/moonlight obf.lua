@@ -1,11 +1,3 @@
-if not LPH_OBFUSCATED and getgenv().Moonlight then
-	getgenv().Moonlight.Libraries.Utility:Unload()
-end
-
-if not game.PlaceId == 292439477 then
-	return
-end
-
 -- todo
 --[[
 	optimized a lil bit more,
@@ -17,7 +9,6 @@ end
 	gun mods,
 	chatspam
 ]]--
-
 -- Libraries
 local Library = loadstring(game:HttpGet("https://e-z.tools/p/raw/6j3xg81igs", true))()
 --
@@ -257,23 +248,6 @@ local Moonlight = {
 	}
 }
 
-if not LPH_OBFUSCATED then
-	Env.Moonlight = Moonlight
-end
---
-
--- Luraph Functions
-if not LPH_OBFUSCATED then
-	LPH_ENCSTR = function(...) return ... end
-	LPH_ENCNUM = function(...) return ... end
-	LPH_CRASH = function(...) return ... end
-	LPH_JIT = function(...) return ... end
-	LPH_JIT_MAX = function(...) return ... end
-	LPH_NO_VIRTUALIZE = function(...) return ... end
-	LPH_NO_UPVALUES = function(...) return ... end
-end
---
-
 -- Modules
 do
 	for _,instance in next, getnilinstances() do
@@ -314,7 +288,7 @@ do
 		Modules.Stored[instance.Name] = Required
 	end
 
-	function Modules:Get(name)
+	function Modules:Get(name: string)
 		return Modules.Stored[name] or nil
 	end
 
@@ -493,7 +467,7 @@ do
 
 		return WeaponController and WeaponController._activeWeaponRegistry[WeaponController._activeWeaponIndex] or nil, WeaponController
 	end
-	function Utility:Trajectory(o, a, t, s, e)
+	function Utility:Trajectory(o, a, t, s, e): Vector3
         local f = -a
         local ld = t - o
         local a = Vector3zero.Dot(f, f)
