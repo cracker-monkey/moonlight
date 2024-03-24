@@ -30,9 +30,12 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local MarketPlaceService = game:GetService("MarketplaceService")
 local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 --
 
 -- Variables
+local RemoteEvent = ReplicatedStorage.RemoteEvent
 local LoadTimeTick = os.clock()
 local Camera = Workspace.CurrentCamera
 local ScreenSize = Camera.ViewportSize
@@ -121,7 +124,6 @@ local Visuals = {
 		["Plastic"] = Enum.Material.Plastic,
 	},
 	Textures = {
-		["Off"] = "rbxassetid://0",
 		["Groove"] = "rbxassetid://10785404176",
 		["Cloud"] = "rbxassetid://5176277457",
 		["Sky"] = "rbxassetid://1494603972",
@@ -227,13 +229,13 @@ local Visuals = {
 			["SkyboxRt"] = "rbxassetid://1045964655",
 			["SkyboxUp"] = "rbxassetid://1045962969"
 		}
-	}
+	},
+	CrosshairDrawings = {}
 }
 
 local Misc = {
 	AutoJumpKey = false,
-	FlyKey = false,
-	SpeedKey = false
+	VoteKicked = false,
 }
 
 local ESP = {
@@ -242,7 +244,18 @@ local ESP = {
 
 local Network = {
 	Connections = {},
-	Client = nil
+	Client = nil,
+	ClockDependant = {
+		["newbullets"] = 3,
+		["equip"] = 2,
+		["spotplayers"] = 2,
+		["updatesight"] = 3,
+		["knifehit"] = 4,
+		["newgrenade"] = 3,
+		["repupdate"] = 3,
+		["bullethit"] = 6,
+	},
+	Shift = 0
 }
 
 local Moonlight = {
@@ -253,7 +266,8 @@ local Moonlight = {
 		Visuals = Visuals,
 		ESP = ESP,
 		Network = Network,
-		Hook = Hook
+		Hook = Hook,
+		Library = Library
 	}
 }
 
@@ -429,15 +443,14 @@ do
 
 		Utility.BindToRenders[name] = nil
 	end
-	function Utility:UnlockMouse(toggle)
-		if not toggle then
-			return
-		end
-
-		taskspawn(LPH_NO_VIRTUALIZE(function()
-			UserInputService.MouseIconEnabled = true
-			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-		end))
+	function Utility:PlaySound(id, volume, pitch)
+		local Sound = Utility:New("Sound", {
+			Parent = Camera,
+			Volume = volume / 100,
+			Pitch = pitch / 100,
+			SoundId = "rbxassetid://" .. tostring(id),
+			PlayOnRemove = true
+		}):Destroy()
 	end
 	--
 
@@ -488,7 +501,6 @@ do
 
 		return "" -- ??
     end
-
     function Utility:GetPlayerStat(player, stat)
         local Entry = LeaderboardInterface.getEntry(player)
 
@@ -611,8 +623,6 @@ do
 	end))
 
 	Library:Connect(RunService.Heartbeat, LPH_NO_VIRTUALIZE(function()
-		Utility:UnlockMouse(Library.open)
-
 		ScreenSize = Camera.ViewportSize
 		BarrelPosition = nil
 
@@ -1016,6 +1026,22 @@ end --
 
 -- Visuals
 do
+	for i = 1, 4 do
+		local OutlineObj = Utility:New("Line", {
+			Visible = false,
+			Transparency = 1
+		})
+		local Obj = Utility:New("Line", {
+			Visible = false,
+			Transparency = 1
+		})
+
+		Visuals.CrosshairDrawings[i] = {
+			Outline = OutlineObj,
+			Fill = Obj
+		}
+	end
+
 	function Visuals:ApplyChams(part, material, color, transparency, decal, reflectance)
 		if part:IsA("BasePart") and part.Transparency < 1 then
 			local Material = Visuals.Materials[material]
@@ -1118,11 +1144,77 @@ do
 		Visuals:UpdateArms()
 	end
 
+	local CrosshairAngle = 0
+	local CrosshairPosition = Vector2zero
+	function Visuals:UpdateCrosshair()
+		if Library.Flags["crosshair"] then
+			CrosshairAngle = CrosshairAngle + (Library.Flags["crosshair_spin_speed"] / 30)
+
+			local Weapon, WeaponController = Utility:GetLocalWeapon()
+	
+			local CharacterObject = CharacterInterface.getCharacterObject()
+			
+			local ScopeValueSpring = 1 - mathclamp(CharacterObject and CharacterObject:getSpring("zoommodspring").p or 1, 0, 1)
+
+			CrosshairPosition = Library.Flags["crosshair_pos"] == "Barrel" 
+				and BarrelPosition 
+				and Vector2new(
+					Utility:Lerp(ScreenSize.x / 2, BarrelPosition.x, ScopeValueSpring),
+					Utility:Lerp(ScreenSize.y / 2, BarrelPosition.y, ScopeValueSpring)
+				)
+				or ScreenSize / 2
+
+			for _,v in next, Visuals.CrosshairDrawings do
+				local Line = v.Fill
+				local LineOutline = v.Outline
+
+				if Line then
+					local Color = Library.Flags["crosshair_color"]
+					local Outline = Library.Flags["crosshair_outline"]
+					local Size = Library.Flags["crosshair_size"]
+					local Thickness = Library.Flags["crosshair_thick"]
+					local Gap = Library.Flags["crosshair_gap"]
+
+					Line.Color = Color
+					Line.Thickness = Thickness
+					Line.Visible = true
+
+					LineOutline.Color = Outline
+					LineOutline.Thickness = Thickness + 2
+					LineOutline.Visible = true
+
+					local Angle = _ * (360 / 4)
+					local AnglePosition = Library.Flags["crosshair_spin"] and CrosshairAngle + Angle or Angle
+                    local SinAngle = math.sin(math.rad(AnglePosition))
+                    local CosAngle = math.cos(math.rad(AnglePosition))
+
+					local AddValue = not BarrelPosition and (_ % 4 == 0 or _ == 1) and 1 or 0
+
+					Line.From = CrosshairPosition + Vector2.new((Gap + AddValue) * CosAngle,(Gap + AddValue) * SinAngle)
+                    Line.To = CrosshairPosition + Vector2.new(((Gap + AddValue) + Size) * CosAngle, ((Gap + AddValue) + Size) * SinAngle)
+    
+                    LineOutline.From = CrosshairPosition + Vector2.new(((Gap + AddValue) - 1) * CosAngle, ((Gap + AddValue) - 1) * SinAngle)
+                    LineOutline.To = CrosshairPosition + Vector2.new(((Gap + AddValue) + Size + 1) * CosAngle, ((Gap + AddValue) + Size + 1) * SinAngle)
+				end
+			end
+		else
+			for _,v in next, Visuals.CrosshairDrawings do
+				local Line = v.Fill
+				local LineOutline = v.Outline
+
+				Line.Visible = false
+				LineOutline.Visible = false
+			end
+		end
+	end
+
 	Library:Connect(Camera.ChildAdded, function()
 		Visuals:UpdateViewmodel()
 	end)
 
-	Library:Connect(RunService.Heartbeat, function()
+	Library:Connect(RunService.Heartbeat, LPH_JIT_MAX(function()
+		Visuals:UpdateCrosshair()
+		
 		local CharacterObject = CharacterInterface.getCharacterObject()
 
         if Library.Flags["brightness"] and Lighting.Brightness ~= (Library.Flags["brightness"] * 2) / 100 then
@@ -1159,9 +1251,10 @@ do
 				end
 			end
 		end
-	end)
+	end))
 
-	Utility:BindToRenderStep("Camera Visuals", 1, function()
+	local SpinX, SpinY, SpinZ = 0, 0, 0
+	Utility:BindToRenderStep("Camera Visuals", 1, LPH_NO_VIRTUALIZE(function()
 		local CharacterObject = CharacterInterface.getCharacterObject()
 
 		if CharacterInterface.isAlive() then
@@ -1170,9 +1263,9 @@ do
 			if Weapon and WeaponController then
 				local MainOffset = Weapon:getWeaponStat("mainoffset")
 				
-				if Library.Flags["viewmodel"] then
-					local ScopeValueSpring = 1 - mathclamp(CharacterObject and CharacterObject:getSpring("zoommodspring").p or 1, 0, 1)
-				
+				local ScopeValueSpring = 1 - mathclamp(CharacterObject and CharacterObject:getSpring("zoommodspring").p or 1, 0, 1)
+
+				if Library.Flags["viewmodel"] then				
 					local ViewmodelPosition = MainOffset * CFramenew(
 						(Library.Flags["viewmodel_x"] / 2) * ScopeValueSpring,
 						(Library.Flags["viewmodel_y"] / 2) * ScopeValueSpring,
@@ -1187,92 +1280,198 @@ do
 				else
 					Weapon._mainOffset = MainOffset
 				end
+
+				local Motor = Weapon._mainWeld
+				if Motor then
+					if Library.Flags["spin"] then
+						SpinX += Library.Flags["spin_x"] / 20
+						SpinY += Library.Flags["spin_y"] / 20
+						SpinZ += Library.Flags["spin_z"] / 20
+
+						local Angle = CFrame.Angles(
+							Utility:Lerp(0, Library.Flags["spin_x"] ~= 0 and SpinX or 0, ScopeValueSpring),
+							Utility:Lerp(0, Library.Flags["spin_y"] ~= 0 and SpinY or 0, ScopeValueSpring),
+							Utility:Lerp(0, Library.Flags["spin_z"] ~= 0 and SpinZ or 0, ScopeValueSpring)
+						)
+
+						Motor.C1 = Angle
+					else
+						if Motor.C1 ~= CFrame.Angles(0, 0, 0) then
+							Motor.C1 = CFrame.Angles(0, 0, 0)
+						end
+					end
+				end
 			end
 		end
-	end)
+	end))
 
 	-- Visuals Hooks
 
 	--Camera Stuff
 	local OldCameraSway = CameraObject.setSway
-	CameraObject.setSway = function(idk, amount)
-		-- 							 ^ wtf is this argument LOL
+	CameraObject.setSway = LPH_NO_VIRTUALIZE(function(idk, amount)
+		-- 							 				   ^ wtf is this argument LOL
 
 		if Library.Flags["remove_sway"] then
 			amount = 0
 		end
 
 		return OldCameraSway(idk, amount)
-	end 
+	end)
 
 	local OldCameraDelta = CameraObject.getDelta
-	CameraObject.getDelta = function(...)
+	CameraObject.getDelta = LPH_NO_VIRTUALIZE(function(...)
         if Library.Flags["remove_sway"] then
             return CFramenew()
         end
 
         return OldCameraDelta(...)
-    end
+    end)
 
 	local OldCameraShake = CameraObject.getShake
-	CameraObject.getShake = function(...)
+	CameraObject.getShake = LPH_NO_VIRTUALIZE(function(...)
         if Library.Flags["remove_sway"] then
             return CFramenew()
         end
 
         return OldCameraShake(...)
-    end
+    end)
 
 	local OldCameraImpulse = CameraObject.applyImpulse
-	CameraObject.applyImpulse = function(...)
+	CameraObject.applyImpulse = LPH_NO_VIRTUALIZE(function(...)
         if Library.Flags["remove_shake"] then
             return
         end
 
         return OldCameraImpulse(...)
-    end
+    end)
 	
 	--
 	
 
 	-- Firearm Stuff
+	local OldWeaponAnim = FirearmObject.getAnimLength
+	FirearmObject.getAnimLength = LPH_NO_VIRTUALIZE(function(weapon, anim, ...)
+
+        if anim == "onfire" and Library.Flags["firerate"] then
+            return 0
+        end
+
+
+        return OldWeaponAnim(weapon, anim, ...)
+    end)
+
+	local OldWeaponAim = FirearmObject.getActiveAimStat
+    FirearmObject.getActiveAimStat = LPH_NO_VIRTUALIZE(function(weapon, stat, value, ...)     
+        if table.find({"firerate", "burstfirerate"}, stat) and Library.Flags["firerate"] then
+            local FireRate = OldWeaponAim(weapon, stat, value, ...)
+
+            if type(FireRate) == "table" then
+                setreadonly(FireRate, false)
+
+                for _,v in next, FireRate do
+                    FireRate[_] = v * (Library.Flags["firerate_amount"] / 100)
+                end
+            else
+                FireRate = FireRate * (Library.Flags["firerate_amount"] / 100)
+            end
+
+            return FireRate
+        end
+
+        return OldWeaponAim(weapon, stat, value, ...)
+    end)
+
+	local OldWeaponStat = FirearmObject.getWeaponStat
+	FirearmObject.getWeaponStat = LPH_NO_VIRTUALIZE(function(weapon, stat, ...)
+		if (stat == "pullout" or stat == "unequiptime" or stat == "equiptime") and Library.Flags["instant_equip"] then
+			return 0
+		elseif stat == "animations" then
+			local ReturnAnimations = OldWeaponStat(weapon, stat, ...)
+
+			if Library.Flags["instant_reload"] then
+				for _,v in next, {"reload", "tacticalreload"} do
+					local Anim = ReturnAnimations[v]
+
+					if Anim then
+						setreadonly(Anim, false)
+
+						Anim.timescale = 0
+						Anim.stdtimescale = 0
+
+						if Anim.resettime then Anim.resettime = 0 end
+					end
+				end
+			end
+
+			return ReturnAnimations
+		elseif stat == "firemodes" and Library.Flags["automatic"] then
+			return {true, true, true}
+		end
+
+		return OldWeaponStat(weapon, stat, ...)
+	end)
+
 	local OldGunSway = FirearmObject.gunSway
-    FirearmObject.gunSway = function(...)
+    FirearmObject.gunSway = LPH_NO_VIRTUALIZE(function(...)
         if Library.Flags["remove_sway"] then
             return CFramenew()
         end
 
         return OldGunSway(...)
-    end
+    end)
 
 	local OldGunWalkSway = FirearmObject.walkSway
-    FirearmObject.walkSway = function(...)
+    FirearmObject.walkSway = LPH_NO_VIRTUALIZE(function(...)
         if Library.Flags["remove_bob"] then
             return CFramenew()
         end
 
         return OldGunWalkSway(...)
-    end
+    end)
+
+	local OldGunSprings = FirearmObject.impulseSprings
+    FirearmObject.impulseSprings = LPH_NO_VIRTUALIZE(function(...)
+        if Library.Flags["recoil"] then
+			local Index8 = debug.getconstant(OldGunSprings, 8)
+
+			if type(Index8) == "number" and Index8 ~= Library.Flags["recoil_amount"] / 100 then				
+				debug.setconstant(OldGunSprings, 8, Library.Flags["recoil_amount"] / 100)
+			end
+        end
+
+        return OldGunSprings(...)
+    end)
 	--
 
 	-- Melee Stuff
+	local OldMeleeStat = MeleeObject.getWeaponStat
+	MeleeObject.getWeaponStat = LPH_NO_VIRTUALIZE(function(weapon, stat, ...)
+		if (stat == "pullout" or stat == "unequiptime" or stat == "equiptime") and Library.Flags["instant_equip"] then
+			return 0
+		end
+
+		return OldMeleeStat(weapon, stat, ...)
+	end)
+
+
 	local OldMeleeSway = MeleeObject.meleeSway
-    MeleeObject.meleeSway = function(...)
+    MeleeObject.meleeSway = LPH_NO_VIRTUALIZE(function(...)
         if Library.Flags["remove_sway"] then
             return CFramenew()
         end
 
         return OldMeleeSway(...)
-    end
+    end)
 
 	local OldMeleeWalkSway = MeleeObject.walkSway
-    MeleeObject.walkSway = function(...)
+    MeleeObject.walkSway = LPH_NO_VIRTUALIZE(function(...)
         if Library.Flags["remove_bob"] then
             return CFramenew()
         end
 
         return OldMeleeWalkSway(...)
-    end
+    end)
 	--
 	
 end --
@@ -1365,11 +1564,32 @@ do
 			end
 		end
 	end))
+
+	taskspawn(function()
+		while taskwait(1) do
+			if Misc.VoteKicked then
+				LocalPlayer:Kick("Moonlight - Joining a new server")
+
+				local Servers = HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
+			
+				while taskwait() do
+					for Index = #Servers.data, 1, -1 do
+						local Value = Servers.data[Index]
+
+						if Value.playing ~= nil and Value.playing < Value.maxPlayers and Value.playing > 8 and Value.id ~= game.JobId then
+							TeleportService:TeleportToPlaceInstance(game.PlaceId, Value.id)
+							break
+						end
+					end     
+				end
+			end
+		end
+	end)
 end
 
 -- Network Handler
 do
-	Network:Connect(LPH_JIT_MAX(function(command, ...)
+	Network:Connect(function(command, ...)
 		local Args = {...}
 
 		if command == "newbullets" then
@@ -1386,10 +1606,42 @@ do
 					end
 				end
 			end
+		elseif command == "bullethit" then
+			if Library.Flags["hitsound_enabled"] then
+				Utility:PlaySound(Library.Flags["hitsound_id"], Library.Flags["hitsound_volume"], Library.Flags["hitsound_pitch"])
+			end
+		elseif command == "falldamage" and Library.Flags["fall_damage"] then
+			return
+		elseif command == "debug" then
+			if Library.Flags["server_hop"] and Args[#Args]:find("kick") then
+				Misc.VoteKicked = true
+			end
+		elseif command == "repupdate" then
+			if Library.Flags["bypass_speed"] then
+				Network.Shift += 1 / 30
+			end
+		end
+
+		local IsDependant = Network.ClockDependant[command]
+
+		if IsDependant then
+			Args[IsDependant] += Network.Shift
 		end
 
 		return Args
-	end))
+	end)
+
+	Library:Connect(RemoteEvent.OnClientEvent, function(command, ...)
+		local Args = {...}
+
+		if command == "died" then
+			if Args[1].attacker == LocalPlayer then
+				if Library.Flags["killsound_enabled"] then
+					Utility:PlaySound(Library.Flags["killsound_id"], Library.Flags["killsound_volume"], Library.Flags["killsound_pitch"])
+				end
+			end
+		end
+	end)
 end
 --
 
@@ -1915,6 +2167,8 @@ do
 	local Crosshair = Interface:Toggle({ name = "Custom Crosshair", flag = "crosshair" })
 		Crosshair:Colorpicker({ name = "Crosshair Color", default = Color3fromRGB(255, 255, 255), flag = "crosshair_color"})
 		Crosshair:Colorpicker({ name = "Crosshair Outline", default = Color3fromRGB(0, 0, 0), flag = "crosshair_outline"})
+	Interface:Dropdown({ name = "Crosshair Position", content = { "Screen", "Barrel" }, multi = false, flag = "crosshair_pos" })
+		:Set("Screen")
 	Interface:Toggle({ name = "Spin Crosshair", flag = "crosshair_spin" })
 	Interface:Slider({ name = "Spin Speed", default = 5, float = 1, min = 1, max = 50, flag = "crosshair_spin_speed" })
 	Interface:Slider({ name = "Thickness", default = 1, float = 1, suffix = " px", min = 1, max = 30, flag = "crosshair_thick" })
@@ -1936,7 +2190,10 @@ do
 	CameraVisuals:Slider({ name = "Pitch Position", default = 0, float = 1, suffix = "°", min = -180, max = 180, flag = "viewmodel_pitch" })
 	CameraVisuals:Slider({ name = "Yaw Position", default = 0, float = 1, suffix = "°", min = -180, max = 180, flag = "viewmodel_yaw" })
 	CameraVisuals:Slider({ name = "Roll Position", default = 0, float = 1, suffix = "°", min = -180, max = 180, flag = "viewmodel_roll" })
-
+	CameraVisuals:Toggle({ name = "Weapon Spin", flag = "spin" })
+	CameraVisuals:Slider({ name = "Pitch Position", default = 0, float = 0.1, suffix = "°", min = -5, max = 5, flag = "spin_x" })
+	CameraVisuals:Slider({ name = "Yaw Position", default = 0, float = 0.1, suffix = "°", min = -5, max = 5, flag = "spin_y" })
+	CameraVisuals:Slider({ name = "Roll Position", default = 0, float = 0.1, suffix = "°", min = -5, max = 5, flag = "spin_z" })
 
 	local Materials = {}
 
@@ -1944,7 +2201,7 @@ do
 		Materials[#Materials + 1] = _
 	end
 
-	local Textures = {}
+	local Textures = {"Off"}
 	for _,v in next, Visuals.Textures do
 		Textures[#Textures + 1] = _
 	end
@@ -2002,9 +2259,16 @@ do
 		:Set("Always")
 	Movement:Slider({ name = "Speed Factor", default = 50, float = 1, min = 1, max = 100, flag = "speed_speed" })
 	Movement:Toggle({ name = "Bypass Fall Damage", flag = "fall_damage" })
+	Movement:Toggle({ name = "Bypass Speed Checks", flag = "bypass_speed" })
 
 	local GunMods = MiscTab:Section({ name = "Gun Modifications", side = "middle" })
-
+	GunMods:Toggle({ name = "Change Recoil", flag = "recoil" })
+	GunMods:Slider({ name = "Recoil Factor", default = 100, float = 1, min = 0, max = 100, flag = "recoil_amount" })
+	GunMods:Toggle({ name = "Change Firerate", flag = "firerate" })
+	GunMods:Slider({ name = "Firerate Scale", default = 100, float = 1, min = 100, max = 1000, flag = "firerate_amount" })
+	GunMods:Toggle({ name = "Instant Equip", flag = "instant_equip" })
+	GunMods:Toggle({ name = "Instant Reload", flag = "instant_reload" })
+	GunMods:Toggle({ name = "Set Weapon To Automatic", flag = "automatic" })
 
 	local Extra = MiscTab:Section({ name = "Extra", side = "right" })
 	Extra:Toggle({ name = "Hit Sound", flag = "hitsound_enabled" })
@@ -2015,6 +2279,8 @@ do
 	Extra:Slider({ name = "Volume", default = 50, float = 1, min = 0, max = 100, flag = "killsound_volume" })
 	Extra:Slider({ name = "Pitch", default = 100, float = 1, min = 0, max = 200, flag = "killsound_pitch" })
 	Extra:Box({ name = "Kill Sound ID", default = "5709456554", flag = "killsound_id", clearonfocus = false })
+	Extra:Toggle({ name = "Join New Game On Votekick", flag = "server_hop" })
+
 	--
 
 	-- Settings Tab
