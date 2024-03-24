@@ -429,6 +429,16 @@ do
 
 		Utility.BindToRenders[name] = nil
 	end
+	function Utility:UnlockMouse(toggle)
+		if not toggle then
+			return
+		end
+
+		taskspawn(LPH_NO_VIRTUALIZE(function()
+			UserInputService.MouseIconEnabled = true
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		end))
+	end
 	--
 
 	-- Game Functions
@@ -601,6 +611,8 @@ do
 	end))
 
 	Library:Connect(RunService.Heartbeat, LPH_NO_VIRTUALIZE(function()
+		Utility:UnlockMouse(Library.open)
+
 		ScreenSize = Camera.ViewportSize
 		BarrelPosition = nil
 
