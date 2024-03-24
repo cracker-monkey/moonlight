@@ -842,6 +842,17 @@ utility.formatted_metatable = {
     end
 }
 
+function utility.mousething(toggle)
+    if not toggle then
+        return
+    end
+
+    taskspawn(LPH_NO_VIRTUALIZE(function()
+        UserInputService.MouseIconEnabled = true
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+    end))
+end
+
 function utility.format(tbl, metatable)
     local old = clone(tbl)
     clear(tbl)
@@ -1617,7 +1628,7 @@ function components.slider(holder, options, zindex)
     })
 
     holder.plus = plus
-holder.minus = minus
+    holder.minus = minus
 
     if holder.keybind then
         plus.Position = newUDim2(1, -(13 + holder.keybind.AbsoluteSize.X), 0, 0)
@@ -1632,7 +1643,11 @@ holder.minus = minus
     local current_tween
 
     local function set(value)
-        value = clamp(utility.round(tonumber(value), options.float), options.min, options.max)
+        if not value then
+            return
+        end
+
+        value = clamp(utility.round(tonumber(value), options.float or 1), options.min, options.max)
         value_text.Text = utility.tostring(value) .. options.suffix
 
         if value ~= current_value then
@@ -4151,6 +4166,8 @@ function library:Window(options)
         sizey = 260,
     })
 
+    utility.mousething(library.open)
+
     local window = Render:Create("Square", {
         Size = newUDim2(0, options.sizex, 0, 22),
         Position = newUDim2(0, self.holder.AbsolutePosition.X - self.window_x / 2 + options.sizex - 62, 0, self.holder.AbsolutePosition.Y),
@@ -4562,7 +4579,10 @@ function library:Window(options)
 
         if library.open then
             window.Visible = window_types.Visible
+            library.open = window.Visible
         end
+
+        utility.mousething(library.open)
     end
 
     utility.format(window_types, true)
