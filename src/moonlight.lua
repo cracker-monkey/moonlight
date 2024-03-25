@@ -150,6 +150,7 @@ local Visuals = {
 		["Rainbow"] = "rbxassetid://10037165803",
 	},
 	BulletTracers = {
+		["Drawing"] = "", -- drawing as in Drawing.new("Line")
 		["Default"] = "rbxassetid://446111271",
 		["Beam"] = "rbxassetid://7151777149",
 		["Ion Beam"] = "rbxassetid://2950987173",
@@ -246,7 +247,8 @@ local Visuals = {
 			["SkyboxUp"] = "rbxassetid://1045962969"
 		}
 	},
-	CrosshairDrawings = {}
+	CrosshairDrawings = {},
+	BulletTracerDrawings = {}
 }
 
 local Misc = {
@@ -772,9 +774,8 @@ do
             bullets = Bullets,
         }, Clock)
 
-        local NewClock = GameClock.getTime()
         for _,v in next, Bullets do
-            Network:Send("bullethit", Weapon.uniqueId, info.Player.Player, info.HitPosition, "Head", v[2], NewClock)
+            Network:Send("bullethit", Weapon.uniqueId, info.Player.Player, info.HitPosition, "Head", v[2], Clock)
         end
 
         Ragebot:FakeShoot(info)
@@ -800,18 +801,17 @@ do
 
 		local WeaponData = weapon._weaponData
 
-
 		local FirePosition = {
 			{Position = BarrelPosition}
 		}
 
         local HitPositions = {
             ReceivedPosition,
-            Character.Head.Position
+            Character.Head.Position,
         }
 
 		if Library.Flags["rage_fire_pos"] then
-			FirePos = Ragebot:Shift({
+			FirePosition = Ragebot:Shift({
 				Storage = FirePosition,
 				Position = HumanoidRootPart.Position,
 				Range = Library.Flags["rage_fire_pos_amount"],
@@ -829,15 +829,15 @@ do
 
 		for _, FirePosTable in next, FirePosition do
             for _, HitPosition in next, HitPositions do
-                local FirePos = FirePosTable.Position
+                local FirePos = FirePosTable and FirePosTable.Position or Vector3zero
 
                 if not (FirePos and HitPosition) then
                     continue
                 end
 
                 local Trajectory = Utility:Trajectory(FirePos, -Gravity, HitPosition, WeaponData.bulletspeed)
-    
-                if BulletCheck(FirePos, HitPosition, Trajectory, -Gravity, WeaponData.penetrationdepth, 1 / 30) then
+				
+                if BulletCheck(FirePos, HitPosition, Trajectory, -Gravity, WeaponData.penetrationdepth, 1 / 60) then
                     Ragebot:Shoot({
                         Player = player,
                         FirePosition = FirePos,
@@ -909,7 +909,6 @@ do
 		if Weapon._spareCount <= 0 and Weapon._magCount <= 0 then
 			return
 		end
-        
 
 		Ragebot:GetTargets()
 
@@ -1242,10 +1241,12 @@ do
 			if Target and Library.Flags["silent_aim_hitchance"] >= Target.Hitchance then
 				local Weapon, WeaponController = Utility:GetLocalWeapon()
 
-				if Weapon then
+				if Weapon and Weapon._weaponData and Weapon._weaponData.bulletspeed then
 					local Trajectory = Utility:Trajectory(data.position, -Gravity, Target.HitboxPosition, Weapon._weaponData.bulletspeed)
 
-					data.velocity = Trajectory
+					if Trajectory then
+						data.velocity = Trajectory
+					end
 				end
 			end
 		--end
@@ -1496,6 +1497,19 @@ do
 	end
 
 	function Visuals:CreateBulletTracer(origin, endpos, color, time, decal)
+		if decal == "Drawing" then
+			Utility:CreateDrawingTracer({
+				Positions = {
+					origin,
+					endpos
+				},
+				Time = time,
+				Color = color,
+			})
+
+			return
+		end
+
 		local Decal = Visuals.BulletTracers[decal] or "rbxassetid://446111271"
 
 		local OriginAttachment = Utility:New("Attachment", {
@@ -2366,7 +2380,7 @@ end --
 -- Menu Interface
 do
 	-- Window | Watermark
-	local Window = Library:Load({ title = "Moonlight ", fontsize = 14, theme = "Default", folder = "moonlight", game = MarketPlaceService:GetProductInfo(game.PlaceId).Name, playerlist = true, performancedrag = false, discord = "https://discord.gg/jYrvZb4A35" })
+	local Window = Library:Load({ title = "Moonlight ", fontsize = 14, theme = "Default", folder = "moonlight", game = MarketPlaceService:GetProductInfo(game.PlaceId).Name, playerlist = true, performancedrag = true, discord = "https://discord.gg/jYrvZb4A35" })
 	local Watermark = Library:Watermark("Moonlight | dev | v0.0.1a")
 	--
 
