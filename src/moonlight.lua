@@ -32,6 +32,8 @@ local MarketPlaceService = game:GetService("MarketplaceService")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
+local Debris = game:GetService("Debris")
+local TeleportService = game:GetService("TeleportService")
 --
 
 -- Variables
@@ -115,6 +117,20 @@ local Legitbot = {
 	}
 }
 
+local Directions = {
+    Vector3new(0, -1, 0),
+    Vector3new(-1, 0, 0),
+    Vector3new(1, 0, 0),
+    Vector3new(0, 1, 0),
+    Vector3new(0, 0, 1),
+    Vector3new(0, 0, -1),
+}
+
+local Ragebot = {
+	Targets = {},
+    LastHit = os.clock()
+}
+
 local Visuals = {
 	Materials = {
 		["ForceField"] = Enum.Material.ForceField,
@@ -134,9 +150,9 @@ local Visuals = {
 		["Rainbow"] = "rbxassetid://10037165803",
 	},
 	BulletTracers = {
-		["Shrek"] = "rbxassetid://180614268",
-		["Bee"] = "rbxassetid://14194951314",
-		["Cat"] = "rbxassetid://964125032",
+		["Default"] = "rbxassetid://446111271",
+		["Beam"] = "rbxassetid://7151777149",
+		["Ion Beam"] = "rbxassetid://2950987173",
 		["Missing Texture"] = "rbxassetid://1541381206",
 		["Skibidy Toilet"] = "rbxassetid://14488881439"
 	},
@@ -444,6 +460,10 @@ do
 		Utility.BindToRenders[name] = nil
 	end
 	function Utility:PlaySound(id, volume, pitch)
+		id = tostring(id)
+	
+		id = id:gsub("rbxassetid://", "")
+	
 		local Sound = Utility:New("Sound", {
 			Parent = Camera,
 			Volume = volume / 100,
@@ -452,19 +472,21 @@ do
 			PlayOnRemove = true
 		}):Destroy()
 	end
-	function Utility:UnlockMouse(toggle)
-		if not toggle then
-			return
-		end
-
-		UserInputService.MouseIconEnabled = true
-		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-	end
 	--
 
 	-- Game Functions
 	function Utility:GetEntry(player)
 		return player and ReplicationInterface.getEntry(player) or nil
+	end
+
+	function Utility:GetThirdPersonObject(player)
+        local Entry = Utility:GetEntry(player)
+
+        if Entry then
+            return Entry._thirdPersonObject or nil
+        end
+
+		return nil
 	end
 
 	function Utility:GetCharacter(player)
@@ -595,20 +617,8 @@ do
 			Legitbot.Aimbot.KeybindStatus = true
 		end
 
-		if input.UserInputType == Library.flags["silent_aim_key"] or input.KeyCode == Library.flags["silent_aim_key"] then
-			Legitbot.SilentAim.KeybindStatus = true
-		end
-
 		if input.UserInputType == Library.flags["auto_jump_key"] or input.KeyCode == Library.flags["auto_jump_key"] then
 			Misc.AutoJumpKey = true
-		end
-
-		if input.UserInputType == Library.flags["speed_key"] or input.KeyCode == Library.flags["speed_key"] then
-			Misc.SpeedKey = not Misc.SpeedKey
-		end
-
-		if input.UserInputType == Library.flags["fly_key"] or input.KeyCode == Library.flags["fly_key"] then
-			Misc.FlyKey = not Misc.FlyKey
 		end
 	end))
 
@@ -621,18 +631,12 @@ do
 			Legitbot.Aimbot.KeybindStatus = false
 		end
 
-		if input.UserInputType == Library.flags["silent_aim_key"] or input.KeyCode == Library.flags["silent_aim_key"] then
-			Legitbot.SilentAim.KeybindStatus = false
-		end
-
 		if input.UserInputType == Library.flags["auto_jump_key"] or input.KeyCode == Library.flags["auto_jump_key"] then
 			Misc.AutoJumpKey = false
 		end
 	end))
 
 	Library:Connect(RunService.Heartbeat, LPH_NO_VIRTUALIZE(function()
-		Utility:UnlockMouse(Library.open)
-
 		ScreenSize = Camera.ViewportSize
 		BarrelPosition = nil
 
@@ -648,6 +652,281 @@ do
             BarrelPosition = Vector2.new(Position.x, Position.y)
 		end
 	end))
+end
+
+do	
+    function Ragebot:FakeShoot(info)
+        local Weapon = info.Weapon
+
+        -- ok i need to figure out how to add fake bullet here
+
+		local CharacterObject = CharacterInterface.getCharacterObject()
+        Weapon:impulseSprings(CharacterObject:getSpring("aimspring").p)
+
+        if Weapon:getWeaponStat("type") == "REVOLVER" and not Weapon:getWeaponStat("caselessammo") then
+            Sound.play("metalshell", 0.1)
+        elseif Weapon:getWeaponStat("type") == "SHOTWeapon" then 
+            Sound.play("shotWeaponshell", 0.2)
+        elseif Weapon:getWeaponStat("type") == "SNIPER" then
+            Weapon:playAnimation("pullbolt", true, true)
+
+            Sound.play("metalshell", 0.15, 0.8)
+        end
+
+        if Weapon:getWeaponStat("sniperbass") then
+            Sound.play("1PsniperEcho", 1)
+            Sound.play("1PsniperBass", 0.75)
+        end
+
+        if not Weapon:getWeaponStat("nomuzzleeffects") then
+            Effects.muzzleflash(
+                Weapon._barrelPart, 
+                Weapon:getWeaponStat("hideflash")
+            )
+        end
+
+        Utility:PlaySound(
+            Weapon:getWeaponStat("firesoundid"),
+            Weapon:getWeaponStat("firevolume") * 100,
+            Weapon:getWeaponStat("firepitch") * 100
+        )
+
+        HudCrosshairsInterface.fireHitmarker("Head")
+    end
+
+    function Ragebot:Shift(info)
+        info = {
+            Range = info.Range or 1,
+            Position = info.Position or nil,
+            Storage = info.Storage or {},
+            ReturnFirePos = info.ReturnFirePos or false
+        }
+
+        local Position = info.Position
+        local Range = info.Range
+        local Storage = info.Storage
+
+        if not Storage then
+            return
+        end
+
+        for _,v in next, Directions do
+            local Ray = workspace:Raycast(Position, (v * Range), RayParams)
+            local ReturnedPos = Ray and (Ray.Position - v) or Position + (v * Range)
+
+            Storage[#Storage] = info.ReturnFirePos and {
+                Position = ReturnedPos
+            } or ReturnedPos
+        end
+
+        return Storage
+    end
+
+    function Ragebot:Shoot(info)
+        local Weapon = info.Weapon
+
+        local Firerate = 60 / FirearmObject.getFirerate(Weapon)
+
+        local HitTick = os.clock()
+        if HitTick - Ragebot.LastHit <= Firerate then
+            return
+        end
+
+        Ragebot.LastHit = HitTick
+
+        -- // i was too lazy to make reload thing so i stole it
+        local WeaponData = info.WeaponData
+
+        Weapon._magCount -= 1
+        if Weapon._magCount < 1 then
+            local newCount = WeaponData.magsize + (WeaponData.chamber and 1 or 0) + Weapon._magCount
+            if Weapon._spareCount >= newCount then
+                Weapon._magCount += newCount
+                Weapon._spareCount -= newCount
+            else
+                Weapon._magCount += Weapon._spareCount
+                Weapon._spareCount = 0
+            end
+            Network:Send("reload")
+        end
+
+        local Bullets = {}
+
+        local FireCount = Weapon._fireCount
+
+        for i = 1, WeaponData.pelletcount or 1 do
+            FireCount += 1
+
+            Bullets[i] = { info.Trajectory, FireCount }            
+        end
+
+        Weapon._fireCount = FireCount
+
+        local Clock = GameClock.getTime()
+
+        --Network.Shift += Firerate
+
+        Network:Send("newbullets", Weapon.uniqueId, {
+            camerapos = info.FirePosition,
+            firepos = info.FirePosition,
+            bullets = Bullets,
+        }, Clock)
+
+        local NewClock = GameClock.getTime()
+        for _,v in next, Bullets do
+            Network:Send("bullethit", Weapon.uniqueId, info.Player.Player, info.HitPosition, "Head", v[2], NewClock)
+        end
+
+        Ragebot:FakeShoot(info)
+    end
+
+	function Ragebot:ScanPlayer(player, weapon)
+		if not player then
+			return
+		end
+
+		local CharacterObject = CharacterInterface.getCharacterObject()
+		local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+
+		local BarrelPosition = weapon and weapon._barrelPart and weapon._barrelPart.Position or HumanoidRootPart.Position
+
+        local Character = player.Character
+
+		local ThirdPersonObject = player.ThirdPersonObject
+
+		local ReplicationObject = ThirdPersonObject._replicationObject
+
+		local ReceivedPosition = ReplicationObject._receivedPosition or nil
+
+		local WeaponData = weapon._weaponData
+
+
+		local FirePosition = {
+			{Position = BarrelPosition}
+		}
+
+        local HitPositions = {
+            ReceivedPosition,
+            Character.Head.Position
+        }
+
+		if Library.Flags["rage_fire_pos"] then
+			FirePos = Ragebot:Shift({
+				Storage = FirePosition,
+				Position = HumanoidRootPart.Position,
+				Range = Library.Flags["rage_fire_pos_amount"],
+				ReturnFirePos = true,
+			})
+		end
+
+		if Library.Flags["rage_hitbox"] then
+			HitPositions = Ragebot:Shift({
+				Storage = HitPositions,
+				Position = ReceivedPosition or Character.Head.Position,
+				Range = Library.Flags["rage_hitbox_amount"]
+			})
+		end
+
+		for _, FirePosTable in next, FirePosition do
+            for _, HitPosition in next, HitPositions do
+                local FirePos = FirePosTable.Position
+
+                if not (FirePos and HitPosition) then
+                    continue
+                end
+
+                local Trajectory = Utility:Trajectory(FirePos, -Gravity, HitPosition, WeaponData.bulletspeed)
+    
+                if BulletCheck(FirePos, HitPosition, Trajectory, -Gravity, WeaponData.penetrationdepth, 1 / 30) then
+                    Ragebot:Shoot({
+                        Player = player,
+                        FirePosition = FirePos,
+                        BarrelPosition = BarrelPosition,
+                        HitPosition = HitPosition,
+                        Trajectory = Trajectory,
+                        Weapon = weapon,
+                        WeaponData = WeaponData
+                    })
+
+                    return
+                end
+            end
+		end
+
+		return
+	end
+
+	function Ragebot:GetTargets()
+		Ragebot.Targets = {}
+
+		for _,v in next, Players:GetPlayers() do
+			if not (Utility:IsAlive(v) and v ~= LocalPlayer and v.Team ~= LocalPlayer.Team) then
+				continue
+			end
+
+            local Character = Utility:GetCharacter(v)
+
+            local CharacterObject = CharacterInterface.getCharacterObject()
+            local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+
+            local Origin = HumanoidRootPart and HumanoidRootPart.Position or Camera.CFrame.p
+
+            local ThirdPersonObject = Utility:GetThirdPersonObject(v)
+            local ReplicationObject = ThirdPersonObject._replicationObject
+            local ReceivedPosition = ReplicationObject._receivedPosition or Character.Head.Position
+
+            local DistanceFromPlayer = (ReceivedPosition - Origin).Magnitude
+
+			tableinsert(Ragebot.Targets, {
+				Player = v,
+				ThirdPersonObject = ThirdPersonObject,
+				Health = Utility:GetHealth(v) or 0,
+                Distance = DistanceFromPlayer,
+				Character = Character
+			})
+		end
+
+		tablesort(Ragebot.Targets, function(Index1, Index2)
+			return Index1.Distance < Index2.Distance
+		end)
+	end
+
+	function Ragebot.ScanPlayers()
+		if not Library.Flags["ragebot"] then
+			return
+		end
+
+		local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+		if not (Weapon and WeaponController and RoundSystemClientInterface.isRunning() and not RoundSystemClientInterface.isCountingDown()) then
+			return
+		end
+
+        if not (Weapon._spareCount and Weapon._magCount) then
+            return
+        end
+
+		if Weapon._spareCount <= 0 and Weapon._magCount <= 0 then
+			return
+		end
+        
+
+		Ragebot:GetTargets()
+
+		local Target = Ragebot.Targets[1]
+
+		if not Target then
+			return
+		end
+
+        if Library.Playerlist:IsTagged(Target.Player, "Friended") then
+            return
+        end
+
+		Ragebot:ScanPlayer(Target, Weapon)
+	end
+
+	Library:Connect(RunService.RenderStepped, Ragebot.ScanPlayers)
 end
 
 -- Legitbot
@@ -849,7 +1128,7 @@ do
 			)
 			or ScreenSize / 2
 
-		if Library.flags["silent_aim_enabled"] and SilentAim.KeybindStatus and not Library.open then
+		if Library.flags["silent_aim_enabled"] and not Library.open then
 			for _,v in next, Players:GetPlayers() do
 				if v == LocalPlayer then
 					continue
@@ -1124,8 +1403,6 @@ do
 
 		if Library.Flags["arm_chams"] then
 			for _,part in next, CameraChildren do
-				print(part.Name)
-
 				if not part.Name:lower():find("main") and #part:GetChildren() > 0 then
 					Visuals:RemoveTextures(part)
 
@@ -1216,6 +1493,38 @@ do
 				LineOutline.Visible = false
 			end
 		end
+	end
+
+	function Visuals:CreateBulletTracer(origin, endpos, color, time, decal)
+		local Decal = Visuals.BulletTracers[decal] or "rbxassetid://446111271"
+
+		local OriginAttachment = Utility:New("Attachment", {
+			Position = origin,
+			Parent = workspace.Terrain
+		})
+
+		local EndAttachment = Utility:New("Attachment", {
+			Position = endpos,
+			Parent = workspace.Terrain
+		})
+		
+		local Beam = Utility:New("Beam", {
+			Texture = Decal,
+			LightEmission = 1,
+            LightInfluence = 0,
+			TextureSpeed = 10,
+            Color = ColorSequence.new(color),
+			Width0 = 1.2,
+            Width1 = 1.2,
+			Attachment0 = OriginAttachment,
+			Attachment1 = EndAttachment,
+			Enabled = true,
+			Parent = workspace
+		})
+
+		Debris:AddItem(OriginAttachment, time)
+		Debris:AddItem(EndAttachment, time)
+		Debris:AddItem(Beam, time)
 	end
 
 	Library:Connect(Camera.ChildAdded, function()
@@ -1616,6 +1925,22 @@ do
 					end
 				end
 			end
+
+			if Library.Flags["l_bullet_tracers"] then
+				for i = 1, #Args[2].bullets do
+					local Bullet = Args[2].bullets[i]
+					local Origin = Args[2].firepos
+					local End = Origin + (type(Bullet[1]) == "table" and Bullet[1].unit.Unit or Bullet[1].Unit) * 300
+
+					Visuals:CreateBulletTracer(
+						Origin,
+						End,
+						Library.Flags["l_bullet_tracers_color"],
+						Library.Flags["l_bullet_tracers_time"],
+						Library.Flags["l_bullet_tracers_texture"]
+					)
+				end
+			end
 		elseif command == "bullethit" then
 			if Library.Flags["hitsound_enabled"] then
 				Utility:PlaySound(Library.Flags["hitsound_id"], Library.Flags["hitsound_volume"], Library.Flags["hitsound_pitch"])
@@ -1627,6 +1952,10 @@ do
 				Misc.VoteKicked = true
 			end
 		elseif command == "repupdate" then
+			-- if getgenv().repstop and not Args[4] then
+			-- 	return
+			-- end
+
 			if Library.Flags["bypass_speed"] then
 				Network.Shift += 1 / 30
 			end
@@ -1634,8 +1963,8 @@ do
 
 		local IsDependant = Network.ClockDependant[command]
 
-		if IsDependant then
-			Args[IsDependant] += Network.Shift
+		if IsDependant and Library.Flags then
+			Args[IsDependant] += Network.Shift or 0
 		end
 
 		return Args
@@ -2037,7 +2366,7 @@ end --
 -- Menu Interface
 do
 	-- Window | Watermark
-	local Window = Library:Load({ title = "Moonlight ", fontsize = 14, theme = "Default", folder = "moonlight", game = MarketPlaceService:GetProductInfo(game.PlaceId).Name, playerlist = true, performancedrag = true, discord = "https://discord.gg/jYrvZb4A35" })
+	local Window = Library:Load({ title = "Moonlight ", fontsize = 14, theme = "Default", folder = "moonlight", game = MarketPlaceService:GetProductInfo(game.PlaceId).Name, playerlist = true, performancedrag = false, discord = "https://discord.gg/jYrvZb4A35" })
 	local Watermark = Library:Watermark("Moonlight | dev | v0.0.1a")
 	--
 
@@ -2070,7 +2399,7 @@ do
 
 	local BulletRedirection = LegitTab:Section({ name = "Bullet Redirection", side = "middle" })
 	BulletRedirection:Toggle({ name = "Silent Aim", flag = "silent_aim_enabled" })
-		:Keybind({ name = "Silent Aim", listignored = false, mode = "hold", blacklist = {}, flag = "silent_aim_key" })
+		:Keybind({ name = "Silent Aim", listignored = false, mode = "toggle", blacklist = {}, flag = "silent_aim_key" })
 	BulletRedirection:Toggle({ name = "Visible Check", flag = "silent_aim_visible_check" })
 	BulletRedirection:Toggle({ name = "Predict Velocity", flag = "silent_aim_pred" })
 	BulletRedirection:Slider({ name = "Field of View", default = 70, float = 1, suffix = "°", min = 1, max = 360, flag = "silent_aim_fov" })
@@ -2093,6 +2422,15 @@ do
 	-- TriggerbotSection:Slider({ name = "Delay", default = 120, float = 1, suffix = "ms", min = 0, max = 1000, flag = "triggerbot_delay" })
 	-- TriggerbotSection:Dropdown({ name = "Hitscan", content = { "Head", "Upper Torso", "Lower Torso", "Arms", "Legs" }, multi = true, flag = "triggerbot_hitscan" }) ]]
 	
+	local Ragebot = RageTab:Section({ name = "Rage Bot", side = "left" })
+	Ragebot:Toggle({ name = "Rage Bot", flag = "ragebot" })
+		:Keybind({ name = "Rage Bot", listignored = false, mode = "toggle", blacklist = {}, flag = "ragebot_key" })
+	Ragebot:Toggle({ name = "Fire Position Scanning", flag = "rage_fire_pos" })
+	Ragebot:Slider({ name = "Radius", default = 6, float = 0.1, suffix = " studs", min = 1, max = 12, flag = "rage_fire_pos_amount" })
+	Ragebot:Toggle({ name = "Hitbox Shifting", flag = "rage_hitbox" })
+	Ragebot:Slider({ name = "Radius", default = 6, float = 0.1, suffix = " studs", min = 1, max = 10, flag = "rage_hitbox_amount" })
+	
+
 	local ESP_Types = {
 		["Enemy"] = {
 			["Flag"] = "E_",
@@ -2248,14 +2586,26 @@ do
 			sethiddenproperty(Lighting, "Technology", Enum.Technology[v])
 		end
 	end}):Set("Legacy")
-
+	
 	local Skyboxes = { "Off" }
 	for _,v in next, Visuals.Skyboxes do
 		Skyboxes[#Skyboxes + 1] = _
 	end
-
+	
 	World:Dropdown({ name = "Skybox Changer", content = Skyboxes, multi = false, flag = "skybox_changer"})
 		:Set("Off")
+
+		
+	local BulletTracers = {}
+	for _,v in next, Visuals.BulletTracers do
+		BulletTracers[#BulletTracers + 1] = _
+	end
+
+	World:Toggle({ name = "Local Bullet Tracers", flag = "l_bullet_tracers" })
+		:Colorpicker({ name = "Local Bullet Tracers Color", default = Color3fromRGB(255, 255, 255), flag = "l_bullet_tracers_color"})
+	World:Dropdown({ name = "Texture", content = BulletTracers, multi = false, flag = "l_bullet_tracers_texture" })
+		:Set("Default")
+	World:Slider({ name = "Time", default = 3, float = 1, min = 1, max = 20, flag = "l_bullet_tracers_time" })
 
 	local Movement = MiscTab:Section({ name = "Movement", side = "left" })
 	Movement:Toggle({ name = "Fly", flag = "fly" })
@@ -2267,7 +2617,7 @@ do
 		:Keybind({ name = "Speed", listignored = false, mode = "toggle", blacklist = {}, flag = "speed_key" })
 	Movement:Dropdown({ name = "Speed Type", content = {"Always", "In Air", "On Hop"}, multi = false, flag = "speed_type"})
 		:Set("Always")
-	Movement:Slider({ name = "Speed Factor", default = 50, float = 1, min = 1, max = 1000, flag = "speed_speed" })
+	Movement:Slider({ name = "Speed Factor", default = 50, float = 1, min = 1, max = 300, flag = "speed_speed" })
 	Movement:Toggle({ name = "Bypass Fall Damage", flag = "fall_damage" })
 	Movement:Toggle({ name = "Bypass Speed Checks", flag = "bypass_speed" })
 
