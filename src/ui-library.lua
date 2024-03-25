@@ -1740,18 +1740,7 @@ local keys = {
     [Enum.UserInputType.MouseButton3] = "MOUSE-3"
 }
 
-local blacklisted_keys = {
-    [Enum.KeyCode.W] = true,
-    [Enum.KeyCode.A] = true,
-    [Enum.KeyCode.S] = true,
-    [Enum.KeyCode.D] = true,
-    [Enum.KeyCode.Space] = true,
-    [Enum.KeyCode.Escape] = true,
-    [Enum.KeyCode.Backspace] = true,
-    [Enum.KeyCode.Slash] = true,
-    [Enum.KeyCode.Delete] = true,
-    [Enum.KeyCode.Insert] = true
-}
+local blacklisted_keys = {} -- we dont wanna use this, trust me - cracker monkey
 
 local enums = {}
 
@@ -4613,7 +4602,7 @@ function library:Load(options)
         keybindlist = true,
         font = worldtoscreen ~= nil and "system" or "plex",
         fontsize = 13,
-        discord = "6wp393UeCc",
+        discord = "mqdBs4zf4s",
         sizex = 700,
         sizey = 550
     })

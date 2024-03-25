@@ -115,6 +115,10 @@ local Legitbot = {
 	}
 }
 
+local Ragebot = {
+	Targets = {}
+}
+
 local Visuals = {
 	Materials = {
 		["ForceField"] = Enum.Material.ForceField,
@@ -452,19 +456,21 @@ do
 			PlayOnRemove = true
 		}):Destroy()
 	end
-	function Utility:UnlockMouse(toggle)
-		if not toggle then
-			return
-		end
-
-		UserInputService.MouseIconEnabled = true
-		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-	end
 	--
 
 	-- Game Functions
 	function Utility:GetEntry(player)
 		return player and ReplicationInterface.getEntry(player) or nil
+	end
+
+	function Utility:GetThirdPersonObject(player)
+        local Entry = Utility:GetEntry(player)
+
+        if Entry then
+            return Entry._thirdPersonObject or nil
+        end
+
+		return nil
 	end
 
 	function Utility:GetCharacter(player)
@@ -602,14 +608,6 @@ do
 		if input.UserInputType == Library.flags["auto_jump_key"] or input.KeyCode == Library.flags["auto_jump_key"] then
 			Misc.AutoJumpKey = true
 		end
-
-		if input.UserInputType == Library.flags["speed_key"] or input.KeyCode == Library.flags["speed_key"] then
-			Misc.SpeedKey = not Misc.SpeedKey
-		end
-
-		if input.UserInputType == Library.flags["fly_key"] or input.KeyCode == Library.flags["fly_key"] then
-			Misc.FlyKey = not Misc.FlyKey
-		end
 	end))
 
 	Library:Connect(UserInputService.InputChanged, LPH_NO_VIRTUALIZE(function()
@@ -631,8 +629,6 @@ do
 	end))
 
 	Library:Connect(RunService.Heartbeat, LPH_NO_VIRTUALIZE(function()
-		Utility:UnlockMouse(Library.open)
-
 		ScreenSize = Camera.ViewportSize
 		BarrelPosition = nil
 
@@ -649,6 +645,95 @@ do
 		end
 	end))
 end
+
+-- Ragebot
+-- do	
+-- 	function Ragebot:ScanPlayer(player, weapon)
+-- 		if not player then
+-- 			return
+-- 		end
+
+-- 		local CharacterObject = CharacterInterface.getCharacterObject()
+-- 		local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+
+-- 		local BarrelPosition = weapon and weapon._barrelPart and weapon._barrelPart.Position or HumanoidRootPart.Position
+
+-- 		local FirePosition = {
+-- 			{Position = BarrelPosition}
+-- 		}
+
+-- 		local ThirdPersonObject = player.ThirdPersonObject
+
+-- 		local ReplicationObject = ThirdPersonObject._replicationObject
+
+-- 		local ReceivedPosition = ReplicationObject._receivedPosition
+
+-- 		local WeaponData = weapon._weaponData
+
+-- 		-- soon im going to add scanning here
+
+-- 		for _, FirePosTable in next, FirePosition do
+-- 			local FirePos = FirePosTable.Position
+
+-- 			if not FirePos then
+-- 				continue
+-- 			end
+
+-- 			local Trajectory = Utility:Trajectory(FirePos, -Gravity, ReceivedPosition, WeaponData.bulletspeed)
+
+-- 			if BulletCheck(FirePos, ReceivedPosition, Trajectory, -Gravity, WeaponData.penetrationdepth, 1 / 60) then
+-- 				-- shoot the nigga nigga nigga
+
+-- 				print(player.Player.Name)
+-- 			end
+-- 		end
+-- 	end
+
+-- 	function Ragebot:GetTargets()
+-- 		Ragebot.Targets = {}
+
+-- 		for _,v in next, Players:GetPlayers() do
+-- 			if not (Utility:IsAlive(v) and v ~= LocalPlayer and v.Team ~= LocalPlayer.Team) then
+-- 				continue
+-- 			end
+
+-- 			tableinsert(Ragebot.Targets, {
+-- 				Player = v,
+-- 				ThirdPersonObject = Utility:GetThirdPersonObject(v),
+-- 				Health = Utility:GetHealth(v),
+-- 				Character = Utility:GetCharacter(v)
+-- 			})
+-- 		end
+
+-- 		tablesort(Ragebot.Targets, function(Index1, Index2)
+-- 			return Index.Health < Index2.Health
+-- 		end)
+-- 	end
+
+-- 	function Ragebot.ScanPlayers()
+-- 		local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+-- 		if not (Weapon and WeaponController and RoundSystemClientInterface.isRunning() and not RoundSystemClientInterface.isCountingDown()) then
+-- 			return
+-- 		end
+
+-- 		if Weapon._spareCount <= 0 and Weapon._magCount <= 0 then
+-- 			return
+-- 		end
+
+-- 		Ragebot:GetTargets()
+
+-- 		local Target = Ragebot.Targets[1]
+
+-- 		if not Target then
+-- 			return
+-- 		end
+
+-- 		Ragebot:ScanPlayer(Target, Weapon)
+-- 	end
+
+-- 	Library:Connect(RunService.RenderStepped, Ragebot.ScanPlayers)
+-- end
 
 -- Legitbot
 do
@@ -1627,6 +1712,10 @@ do
 				Misc.VoteKicked = true
 			end
 		elseif command == "repupdate" then
+			if getgenv().repstop and not Args[4] then
+                return
+			end
+
 			if Library.Flags["bypass_speed"] then
 				Network.Shift += 1 / 30
 			end
@@ -1634,8 +1723,8 @@ do
 
 		local IsDependant = Network.ClockDependant[command]
 
-		if IsDependant then
-			Args[IsDependant] += Network.Shift
+		if IsDependant and Library.Flags then
+			Args[IsDependant] += Network.Shift or 0
 		end
 
 		return Args
@@ -2037,7 +2126,7 @@ end --
 -- Menu Interface
 do
 	-- Window | Watermark
-	local Window = Library:Load({ title = "Moonlight ", fontsize = 14, theme = "Default", folder = "moonlight", game = MarketPlaceService:GetProductInfo(game.PlaceId).Name, playerlist = true, performancedrag = true, discord = "https://discord.gg/jYrvZb4A35" })
+	local Window = Library:Load({ title = "Moonlight ", fontsize = 14, theme = "Default", folder = "moonlight", game = MarketPlaceService:GetProductInfo(game.PlaceId).Name, playerlist = true, performancedrag = false, discord = "https://discord.gg/jYrvZb4A35" })
 	local Watermark = Library:Watermark("Moonlight | dev | v0.0.1a")
 	--
 
@@ -2267,7 +2356,7 @@ do
 		:Keybind({ name = "Speed", listignored = false, mode = "toggle", blacklist = {}, flag = "speed_key" })
 	Movement:Dropdown({ name = "Speed Type", content = {"Always", "In Air", "On Hop"}, multi = false, flag = "speed_type"})
 		:Set("Always")
-	Movement:Slider({ name = "Speed Factor", default = 50, float = 1, min = 1, max = 1000, flag = "speed_speed" })
+	Movement:Slider({ name = "Speed Factor", default = 50, float = 1, min = 1, max = 300, flag = "speed_speed" })
 	Movement:Toggle({ name = "Bypass Fall Damage", flag = "fall_damage" })
 	Movement:Toggle({ name = "Bypass Speed Checks", flag = "bypass_speed" })
 
@@ -2338,3 +2427,886 @@ end --
 
 Library:Init()
 Library:Notify({ title = "Welcome", message = string.format("Welcome to Moonlight, %s! Version: %s | Loaded modules in (%sms)", LocalPlayer.Name, "v0.0.1a", math.floor((os.clock() - LoadTimeTick) * 1000)), duration = 3 })
+
+
+
+
+
+
+
+
+
+
+
+
+-- Services
+local NetworkClient = game:GetService("NetworkClient")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+--
+
+-- Variables
+local Camera = Workspace.CurrentCamera
+local Color3fromRGB = Color3.fromRGB
+local Instancenew = Instance.new
+local Vector2zero = Vector2.zero
+local Vector3zero = Vector3.zero
+local Vector2new = Vector2.new
+local Vector3new = Vector3.new
+local Drawingnew = Drawing.new
+local mathcos = math.cos
+local mathsin = math.sin
+local Env = getgenv()
+local Ignores = { workspace.Players, workspace.Ignore, Camera }
+
+local RayParams = RaycastParams.new()
+RayParams.FilterType = Enum.RaycastFilterType.Blacklist
+RayParams.FilterDescendantsInstances = Ignores
+
+--
+
+local Libraries = Moonlight.Libraries
+local Utility = Libraries.Utility
+local Modules = Libraries.Modules
+local Visuals = Libraries.Visuals
+local Network = Libraries.Network
+CharacterInterface = Modules:Get("CharacterInterface")
+
+Visuals.Tracers = {}
+
+function CreateDrawingTracer(Cfg)
+    Cfg = {
+        Positions = Cfg.Positions or {},
+        Time = Cfg.Time or 5,
+        Color = Cfg.Color or Color3fromRGB(255, 255, 255),
+        Outline = Cfg.Outline or Color3fromRGB(0, 0, 0),
+    }
+
+    local CharacterObject = CharacterInterface.getCharacterObject()
+
+    local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+
+    local Tracer = {
+        ["Objects"] = {},
+        ["StartTick"] = os.clock(),
+    }
+
+    for _,v in next, Cfg.Positions do
+        local OutlineObject = Utility:New("Line", {
+            Thickness = 3,
+            Transparency = 1,
+            --ZIndex = 1,
+            Color = Color3fromRGB(0, 0, 0)
+        })
+
+        local Obj = Utility:New("Line", {
+            Thickness = 1,
+            Transparency = 1,
+            --ZIndex = 2,
+            Color = Color3fromRGB(255, 255, 255)
+        })
+
+        local Circle = Utility:New("Circle", {
+            Transparency = 1,
+            Filled = true,
+            Color = Color3fromRGB(255, 255, 255)
+        })
+
+        Tracer.Objects[_] = {
+            ["OutlineObject"] = OutlineObject,
+            ["Object"] = Obj,
+            ["Circle"] = Circle
+        }
+    end
+
+    local Connection = RunService.Heartbeat:Connect(function()
+        local ScreenSize = Camera.ViewportSize
+
+        local Transparency = 1
+        local OutlineTransparency = 1
+
+        local Origin = HumanoidRootPart and HumanoidRootPart.Position or Camera.CFrame.p
+
+        if os.clock() - Tracer.StartTick > Cfg.Time then
+            Tracer:Remove()
+            table.remove(Visuals.Tracers, _)
+        end
+
+        for _,v in next, Cfg.Positions do
+            local From = _ == 1 and v or Cfg.Positions[_ - 1] or Vector3zero
+            local To = v or Vector3zero
+        
+            local DistanceFromTracer = ((v or Vector3zero) - Origin).Magnitude
+
+            local Trans = Transparency
+            local OutlineTrans = OutlineTransparency
+
+            local Objects = Tracer.Objects[_]
+
+            local OutlineObject = Objects.OutlineObject
+            local Object = Objects.Object
+            local Circle = Objects.Circle
+
+            local FromScreen, FromOnScreen = Camera:WorldToViewportPoint(From)
+            local ToScreen, ToOnScreen = Camera:WorldToViewportPoint(To)
+            
+            Object.Visible = ToOnScreen and FromOnScreen
+            OutlineObject.Visible = ToOnScreen and FromOnScreen
+            Circle.Visible = ToOnScreen and FromOnScreen
+
+            if Object.Visible and OutlineObject.Visible then
+                local FromVector2 = Vector2new(FromScreen.x, FromScreen.y)
+                local ToVector2 = Vector2new(ToScreen.x, ToScreen.y)
+                
+                Object.From = FromVector2
+                Object.To = ToVector2
+                Object.Color = Cfg.Color
+    
+                OutlineObject.From = FromVector2
+                OutlineObject.To = ToVector2
+                OutlineObject.Color = Cfg.Outline
+
+                Circle.Position = FromVector2
+                Circle.Color = Cfg.Color
+                Circle.Radius = 5
+            end
+        end
+    end)
+    Tracer.Connection = Connection
+
+    function Tracer:Remove()
+        for _,v in next, Tracer.Objects do
+            v.OutlineObject:Remove()
+            v.Object:Remove()
+            v.Circle:Remove()
+        end
+
+        Tracer.Connection:Disconnect()
+    end
+
+    Visuals.Tracers[#Visuals.Tracers + 1] = Tracer
+end
+
+
+
+
+
+local astar = {
+    maxtime = getgenv().maxtime or 1, -- max time to find path
+    interval = getgenv().interval or 5, -- distance between nodes
+    maxoffset = 0, -- minimum distance to target to stop pathfinding
+    ignorelist = Ignores, -- list of objects to ignore from raycast
+    performance = false,
+    ThreadAmount = 8, -- Number of threads to create
+}
+
+local nodemetatable = {__index = function(self, index)
+    if not rawget(self, index) then
+        rawset(self, index, setmetatable({}, {__index = function(self0, index0)
+            if not rawget(self0, index0) then
+                rawset(self0, index0, {})
+            end
+
+            return rawget(self0, index0)
+        end}))
+    end
+
+    return rawget(self, index)
+end}
+
+local directions = {
+    space = {
+        Vector3.new(1, 0, 0),
+        Vector3.new(-1, 0, 0),
+        Vector3.new(0, 1, 0),
+        Vector3.new(0, -1, 0),
+        Vector3.new(0, 0, 1),
+        Vector3.new(0, 0, -1)
+    },
+    diagonal = {
+        Vector3.new(1, 0, 1),
+        Vector3.new(1, 0, -1),
+        Vector3.new(-1, 0, 1),
+        Vector3.new(-1, 0, -1),
+        Vector3.new(1, 1, 0),
+        Vector3.new(1, -1, 0),
+        Vector3.new(-1, 1, 0),
+        Vector3.new(-1, -1, 0),
+        Vector3.new(0, 1, 1),
+        Vector3.new(0, -1, 1),
+        Vector3.new(0, 1, -1),
+        Vector3.new(0, -1, -1)
+    },
+    bodydiagonal = {
+        Vector3.new(1, 1, 1),
+        Vector3.new(1, -1, 1),
+        Vector3.new(-1, 1, 1),
+        Vector3.new(-1, -1, 1),
+        Vector3.new(1, 1, -1),
+        Vector3.new(1, -1, -1),
+        Vector3.new(-1, 1, -1),
+        Vector3.new(-1, -1, -1)
+    }
+}
+
+local workspace = game:GetService("Workspace")
+local parameters = RaycastParams.new()
+local insert = table.insert
+
+parameters.FilterType = Enum.RaycastFilterType.Blacklist
+
+function astar:distance(origin, target)
+    local ox, oy, oz = origin.X, origin.Y, origin.Z
+    local tx, ty, tz = target.X, target.Y, target.Z
+    return ((ox - tx) ^ 2 + (oy - ty) ^ 2 + (oz - tz) ^ 2) ^ 0.5
+end
+
+function astar:findpart(origin, target)
+    return workspace:Raycast(origin, target - origin, parameters)
+end
+
+function astar:findpath(origin, target, interval, maxoffset)
+    local types = {space = astar.interval, diagonal = 2 ^ 0.5 * astar.interval, bodydiagonal = 3 ^ 0.5 * astar.interval}
+    local nodes = setmetatable({}, nodemetatable)
+    local endtime = tick() + astar.maxtime
+    local starttime = tick()
+    local path, distance
+
+    parameters.FilterDescendantsInstances = astar.ignorelist
+    nodes[0][0][0] = {
+        hcost = self:distance(origin, target),
+        offset = Vector3.new(),
+        scanned = false,
+        position = origin,
+        lastnode = nil,
+        gcost = 0
+    }
+    nodes[0][0][0].fcost = nodes[0][0][0].hcost
+
+    -- Create coroutines
+    local coroutines = {}
+    local currentThread = 1
+    local maxThreads = astar.ThreadAmount
+    for i = 1, maxThreads do
+        coroutines[i] = coroutine.create(function()
+            while tick() < endtime do
+                local lowestcost, currentnode, x, y, z = math.huge
+
+                for x1, x0 in next, nodes do
+                    for y1, y0 in next, x0 do
+                        for z1, randomnode in next, y0 do
+                            if not randomnode.scanned and randomnode.fcost < lowestcost then
+                                lowestcost = randomnode.fcost
+                                currentnode = randomnode
+                                x = x1; y = y1; z = z1
+                            end
+                        end
+                    end
+                end
+
+                if currentnode then
+                    if self:findpart(currentnode.position, target) and currentnode.hcost > maxoffset then
+                        for offsettype, offsets in next, directions do
+                            for _, offset in next, offsets do
+                                offset = offset * types.space
+                                local offsetnode = nodes[x + offset.X][y + offset.Y][z + offset.Z]
+                                local position = currentnode.position + offset
+
+                                if not self:findpart(currentnode.position, position) then
+                                    if offsetnode then
+                                        if offsetnode.gcost > currentnode.gcost + types[offsettype] then
+                                            offsetnode.lastnode = currentnode
+                                            offsetnode.gcost = currentnode.gcost + types[offsettype]
+                                            offsetnode.fcost = offsetnode.gcost + offsetnode.hcost
+                                        end
+                                    else
+                                        nodes[x + offset.X][y + offset.Y][z + offset.Z] = {
+                                            offset = Vector3.new(x + offset.X, y + offset.Y, z + offset.Z),
+                                            position = position,
+                                            scanned = false,
+                                            lastnode = currentnode,
+                                            gcost = currentnode.gcost + types[offsettype]
+                                        }
+
+                                        local offsetnode = nodes[x + offset.X][y + offset.Y][z + offset.Z]
+                                        offsetnode.hcost = self:distance(offsetnode.position, target)
+                                        offsetnode.fcost = offsetnode.hcost + offsetnode.gcost
+                                    end
+                                end
+                            end
+                        end
+
+                        currentnode.scanned = true
+                    else
+                        path = {}
+
+                        while currentnode.lastnode do
+                            insert(path, 1, currentnode.position)
+                            currentnode = currentnode.lastnode
+                        end
+
+                        insert(path, 1, origin)
+                        currentnode = nodes[x][y][z]
+
+                        if astar.performance then
+                            local direction = (target - currentnode.position).Unit * types.space
+                            local lastgcost = self:distance(currentnode.position, target)
+                            distance = currentnode.gcost + lastgcost
+
+                            for i = 1, math.floor(lastgcost / types.space) do
+                                insert(path, currentnode.position + direction * i)
+                            end
+                        else
+                            local points = {origin}
+                            insert(path, target)
+
+                            for i = 3, #path do
+                                if self:findpart(points[#points], path[i]) then
+                                    insert(points, path[i - 1])
+                                end
+                            end
+
+                            insert(points, target)
+
+                            path = {}
+                            distance = 0
+
+                            for i = 2, #points do
+                                local startpos = points[i - 1]
+                                local endpos = points[i]
+                                local direction = (endpos - startpos).Unit * interval
+                                local pointdist = self:distance(startpos, endpos)
+                                distance = distance + pointdist
+
+                                for i = 1, math.floor(pointdist / interval) do
+                                    insert(path, startpos + direction * i)
+                                end
+
+                                insert(path, endpos)
+                            end
+                        end
+
+                        endtime = tick()
+                        coroutine.yield() -- Yield the current coroutine
+                    end
+                else
+                    endtime = tick()
+                    coroutine.yield() -- Yield the current coroutine
+                end
+            end
+        end)
+    end
+
+    -- Resume coroutines in a round-robin fashion
+    while true do
+        local status, result = coroutine.resume(coroutines[currentThread])
+        if not status then
+            error(result)
+        end
+
+        if coroutine.status(coroutines[currentThread]) == "dead" then
+            break
+        end
+
+        currentThread = currentThread % maxThreads + 1
+    end
+
+    return path, distance, endtime - starttime
+end
+
+--[[ function astar:findpath(origin, target, interval, maxoffset) -- old
+    local types = {space = astar.interval, diagonal = 2 ^ 0.5 * astar.interval, bodydiagonal = 3 ^ 0.5 * astar.interval}
+    local nodes = setmetatable({}, nodemetatable)
+    local endtime = tick() + astar.maxtime
+    local starttime = tick()
+    local path, distance
+
+    parameters.FilterDescendantsInstances = astar.ignorelist
+    nodes[0][0][0] = {
+        hcost = self:distance(origin, target),
+        offset = Vector3.new(),
+        scanned = false,
+        position = origin,
+        lastnode = nil,
+        gcost = 0
+    }
+    nodes[0][0][0].fcost = nodes[0][0][0].hcost
+
+    while tick() < endtime do
+        local lowestcost, currentnode, x, y, z = math.huge
+
+        for x1, x0 in next, nodes do
+            for y1, y0 in next, x0 do
+                for z1, randomnode in next, y0 do
+                    if not randomnode.scanned and randomnode.fcost < lowestcost then
+                        lowestcost = randomnode.fcost
+                        currentnode = randomnode
+                        x = x1; y = y1; z = z1
+                    end
+                end
+            end
+        end
+
+        if currentnode then
+            if self:findpart(currentnode.position, target) and currentnode.hcost > maxoffset then
+                for offsettype, offsets in next, directions do
+                    for _, offset in next, offsets do
+                        offset = offset * types.space
+                        local offsetnode = nodes[x + offset.X][y + offset.Y][z + offset.Z]
+                        local position = currentnode.position + offset
+
+                        if not self:findpart(currentnode.position, position) then
+                            if offsetnode then
+                                if offsetnode.gcost > currentnode.gcost + types[offsettype] then
+                                    offsetnode.lastnode = currentnode
+                                    offsetnode.gcost = currentnode.gcost + types[offsettype]
+                                    offsetnode.fcost = offsetnode.gcost + offsetnode.hcost
+                                end
+                            else
+                                nodes[x + offset.X][y + offset.Y][z + offset.Z] = {
+                                    offset = Vector3.new(x + offset.X, y + offset.Y, z + offset.Z),
+                                    position = position,
+                                    scanned = false,
+                                    lastnode = currentnode,
+                                    gcost = currentnode.gcost + types[offsettype]
+                                }
+
+                                local offsetnode = nodes[x + offset.X][y + offset.Y][z + offset.Z]
+                                offsetnode.hcost = self:distance(offsetnode.position, target)
+                                offsetnode.fcost = offsetnode.hcost + offsetnode.gcost
+                            end
+                        end
+                    end
+                end
+
+                currentnode.scanned = true
+            else
+                path = {}
+
+                while currentnode.lastnode do
+                    insert(path, 1, currentnode.position)
+                    currentnode = currentnode.lastnode
+                end
+
+                insert(path, 1, origin)
+                currentnode = nodes[x][y][z]
+
+                if astar.performance then
+                    local direction = (target - currentnode.position).Unit * types.space
+                    local lastgcost = self:distance(currentnode.position, target)
+                    distance = currentnode.gcost + lastgcost
+
+                    for i = 1, math.floor(lastgcost / types.space) do
+                        insert(path, currentnode.position + direction * i)
+                    end
+                else
+                    local points = {origin}
+                    insert(path, target)
+
+                    for i = 3, #path do
+                        if self:findpart(points[#points], path[i]) then
+                            insert(points, path[i - 1])
+                        end
+                    end
+
+                    insert(points, target)
+
+                    path = {}
+                    distance = 0
+
+                    for i = 2, #points do
+                        local startpos = points[i - 1]
+                        local endpos = points[i]
+                        local direction = (endpos - startpos).Unit * interval
+                        local pointdist = self:distance(startpos, endpos)
+                        distance = distance + pointdist
+                        
+                        for i = 1, math.floor(pointdist / interval) do
+                            insert(path, startpos + direction * i)
+                        end
+
+                        insert(path, endpos)
+                    end
+                end
+
+                endtime = tick()
+                break
+            end
+        else
+            endtime = tick()
+            break
+        end
+    end
+
+    return path, distance, endtime - starttime
+end ]]
+
+
+
+
+
+
+
+
+
+
+
+
+local Libraries = Moonlight.Libraries
+local Utility = Libraries.Utility
+local Modules = Libraries.Modules
+local Visuals = Libraries.Visuals
+local Network = Libraries.Network
+local Library = Libraries.Library
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+RoundSystemClientInterface = Modules:Get("RoundSystemClientInterface")
+WeaponControllerInterface = Modules:Get("WeaponControllerInterface")
+PlayerDataClientInterface = Modules:Get("PlayerDataClientInterface")
+HudCrosshairsInterface = Modules:Get("HudCrosshairsInterface") 
+LeaderboardInterface = Modules:Get("LeaderboardInterface")
+ReplicationInterface = Modules:Get("ReplicationInterface")
+CharacterInterface = Modules:Get("CharacterInterface")
+ActiveLoadoutUtils = Modules:Get("ActiveLoadoutUtils")
+PlayerStatusEvents = Modules:Get("PlayerStatusEvents")
+ReplicationObject = Modules:Get("ReplicationObject")
+ThirdPersonObject = Modules:Get("ThirdPersonObject")
+ContentDatabase = Modules:Get("ContentDatabase")
+BulletInterface = Modules:Get("BulletInterface")
+CharacterObject = Modules:Get("CharacterObject")
+CameraInterface = Modules:Get("CameraInterface")
+CameraObject = Modules:Get("MainCameraObject")
+PublicSettings = Modules:Get("PublicSettings")
+FirearmObject = Modules:Get("FirearmObject")
+NetworkClient = Modules:Get("NetworkClient")
+BulletObject = Modules:Get("BulletObject")
+MeleeObject = Modules:Get("MeleeObject")
+BulletCheck = Modules:Get("BulletCheck")
+GameClock = Modules:Get("GameClock")
+Physics = Modules:Get("PhysicsLib")
+Sound = Modules:Get("AudioSystem")
+Effects = Modules:Get("Effects")
+
+-- Variables
+local LoadTimeTick = os.clock()
+local Camera = Workspace.CurrentCamera
+local ScreenSize = Camera.ViewportSize
+local LocalPlayer = Players.LocalPlayer
+local debuggetupvalue = debug.getupvalue
+local Color3fromRGB = Color3.fromRGB
+local Color3fromHSV = Color3.fromHSV
+local Color3fromHex = Color3.fromHex
+local coroutinewrap = coroutine.wrap
+local Base64Decode = base64decode
+local tableremove = table.remove
+local tableinsert = table.insert
+local tablefind = table.find
+local tablesort = table.sort
+local Instancenew = Instance.new
+local Vector2zero = Vector2.zero
+local Vector3zero = Vector3.zero
+local tableclone = table.clone
+local tableclear = table.clear
+local Vector2new = Vector2.new
+local Vector3new = Vector3.new
+local Drawingnew = Drawing.new
+local CFramenew = CFrame.new
+local mathclamp = math.clamp
+local mathfloor = math.floor
+local Color3new = Color3.new
+local taskspawn = task.spawn
+local taskwait = task.wait
+local UDim2new = UDim2.new
+local mathmax = math.max
+local mathmin = math.min
+local mathcos = math.cos
+local mathabs = math.abs
+local mathrad = math.rad
+local mathsin = math.sin
+local mathatan2 = math.atan2
+local mathrandom = math.random
+local Env = getgenv()
+local Ignores = { workspace.Players, workspace.Ignore, Camera }
+
+local RayParams = RaycastParams.new()
+RayParams.FilterType = Enum.RaycastFilterType.Blacklist
+RayParams.FilterDescendantsInstances = Ignores
+
+local Gravity = Vector3new(0, workspace.Gravity, 0)
+
+if getgenv().rageloop then
+    getgenv().rageloop:Disconnect()
+end
+
+local Directions = {
+    Vector3new(0, -1, 0),
+    Vector3new(-1, 0, 0),
+    Vector3new(1, 0, 0),
+    Vector3new(0, 1, 0),
+    Vector3new(0, 0, 1),
+    Vector3new(0, 0, -1),
+}
+
+local Ragebot = {
+	Targets = {},
+    LastHit = os.clock()
+}
+
+do	
+    function Ragebot:FakeBullet(info)
+
+    end
+
+    function Ragebot:Shift(info)
+        info = {
+            Range = info.Range or 1,
+            Position = info.Position or nil,
+            Storage = info.Storage or {},
+            ReturnFirePos = info.ReturnFirePos or false
+        }
+
+        local Position = info.Position
+        local Range = info.Range
+        local Storage = info.Storage
+
+        if not Storage then
+            return
+        end
+
+        for _,v in next, Directions do
+            local Ray = workspace:Raycast(Position, (v * Range), RayParams)
+            local ReturnedPos = Ray and (Ray.Position - v) or Position + (v * Range)
+
+            Storage[#Storage] = info.ReturnFirePos and {
+                Position = ReturnedPos
+            } or ReturnedPos
+        end
+
+        return Storage
+    end
+
+    function Ragebot:Shoot(info)
+        local Weapon = info.Weapon
+
+        local Firerate = 60 / FirearmObject.getFirerate(Weapon)
+
+        local HitTick = os.clock()
+        if HitTick - Ragebot.LastHit <= Firerate then
+            return
+        end
+
+        Ragebot.LastHit = HitTick
+
+        -- // i was too lazy to make reload thing so i stole it
+        local WeaponData = info.WeaponData
+
+        Weapon._magCount -= 1
+        if Weapon._magCount < 1 then
+            local newCount = WeaponData.magsize + (WeaponData.chamber and 1 or 0) + Weapon._magCount
+            if Weapon._spareCount >= newCount then
+                Weapon._magCount += newCount
+                Weapon._spareCount -= newCount
+            else
+                Weapon._magCount += Weapon._spareCount
+                Weapon._spareCount = 0
+            end
+            Network:Send("reload")
+        end
+
+        local Bullets = {}
+
+        local FireCount = Weapon._fireCount
+
+        for i = 1, WeaponData.pelletcount or 1 do
+            FireCount += 1
+
+            Bullets[i] = { info.Trajectory, FireCount }            
+        end
+
+        Weapon._fireCount = FireCount
+
+        local Clock = GameClock.getTime()
+
+        Network.Shift += Firerate
+
+        Network:Send("newbullets", Weapon.uniqueId, {
+            camerapos = info.FirePosition,
+            firepos = info.FirePosition,
+            bullets = Bullets,
+        }, Clock)
+
+        local NewClock = GameClock.getTime()
+        for _,v in next, Bullets do
+            Network:Send("bullethit", Weapon.uniqueId, info.Player.Player, info.HitPosition, "Head", v[2], NewClock)
+        end
+
+        Ragebot:FakeBullet(info)
+    end
+
+	function Ragebot:ScanPlayer(player, weapon)
+		if not player then
+			return
+		end
+
+		local CharacterObject = CharacterInterface.getCharacterObject()
+		local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+
+		local BarrelPosition = weapon and weapon._barrelPart and weapon._barrelPart.Position or HumanoidRootPart.Position
+
+        local Character = player.Character
+
+		local ThirdPersonObject = player.ThirdPersonObject
+
+		local ReplicationObject = ThirdPersonObject._replicationObject
+
+		local ReceivedPosition = ReplicationObject._receivedPosition or nil
+
+		local WeaponData = weapon._weaponData
+
+
+		local FirePosition = {
+			{Position = BarrelPosition}
+		}
+
+        local HitPositions = {
+            ReceivedPosition,
+            Character.Head.Position
+        }
+
+        FirePos = Ragebot:Shift({
+            Storage = FirePosition,
+            Position = HumanoidRootPart.Position,
+            Range = 12,
+            ReturnFirePos = true,
+        })
+
+        HitPositions = Ragebot:Shift({
+            Storage = HitPositions,
+            Position = ReceivedPosition or Character.Head.Position,
+            Range = 10,
+        })
+
+		for _, FirePosTable in next, FirePosition do
+            for _, HitPosition in next, HitPositions do
+                local FirePos = FirePosTable.Position
+
+                if not (FirePos and HitPosition) then
+                    continue
+                end
+
+				local Path, Distance, Time = astar:findpath(HumanoidRootPart.Position, HitPosition, astar.interval, astar.maxoffset)
+				if Path then
+					for _,v in next, Path do
+						getgenv().repstop = true
+
+						Network.Shift += 1 / 15
+						Network:Send("repupdate", v, Vector2new(0, 0), GameClock.getTime(), true)
+						--print(_, v)
+
+						getgenv().repstop = false
+					end
+
+					CreateDrawingTracer({
+						Time = 3,
+						Positions = Path
+					})
+				else
+					warn("No path found")
+				end
+
+                local Trajectory = Utility:Trajectory(FirePos, -Gravity, HitPosition, WeaponData.bulletspeed)
+    
+                if BulletCheck(FirePos, HitPosition, Trajectory, -Gravity, WeaponData.penetrationdepth, 1 / 30) then
+                    Ragebot:Shoot({
+                        Player = player,
+                        FirePosition = FirePos,
+                        BarrelPosition = BarrelPosition,
+                        HitPosition = HitPosition,
+                        Trajectory = Trajectory,
+                        Weapon = weapon,
+                        WeaponData = WeaponData
+                    })
+
+                    return
+                end
+
+                return
+            end
+		end
+	end
+
+	function Ragebot:GetTargets()
+		Ragebot.Targets = {}
+
+		for _,v in next, Players:GetPlayers() do
+			if not (Utility:IsAlive(v) and v ~= LocalPlayer and v.Team ~= LocalPlayer.Team) then
+				continue
+			end
+
+            local Character = Utility:GetCharacter(v)
+
+            local CharacterObject = CharacterInterface.getCharacterObject()
+            local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+
+            local Origin = HumanoidRootPart and HumanoidRootPart.Position or Camera.CFrame.p
+
+            local ThirdPersonObject = Utility:GetThirdPersonObject(v)
+            local ReplicationObject = ThirdPersonObject._replicationObject
+            local ReceivedPosition = ReplicationObject._receivedPosition or Character.Head.Position
+
+            local DistanceFromPlayer = (ReceivedPosition - Origin).Magnitude
+
+			tableinsert(Ragebot.Targets, {
+				Player = v,
+				ThirdPersonObject = ThirdPersonObject,
+				Health = Utility:GetHealth(v) or 0,
+                Distance = DistanceFromPlayer,
+				Character = Character
+			})
+		end
+
+		-- tablesort(Ragebot.Targets, function(Index1, Index2)
+		-- 	return Index1.Health < Index2.Health
+		-- end)
+
+		tablesort(Ragebot.Targets, function(Index1, Index2)
+			return Index1.Distance < Index2.Distance
+		end)
+	end
+
+	function Ragebot.ScanPlayers()
+		local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+		if not (Weapon and WeaponController and RoundSystemClientInterface.isRunning() and not RoundSystemClientInterface.isCountingDown()) then
+			return
+		end
+
+        if not (Weapon._spareCount and Weapon._magCount) then
+            return
+        end
+
+		if Weapon._spareCount <= 0 and Weapon._magCount <= 0 then
+			return
+		end
+        
+
+		Ragebot:GetTargets()
+
+		local Target = Ragebot.Targets[1]
+
+		if not Target then
+			return
+		end
+
+        if Library.Playerlist:IsTagged(Target.Player, "Friended") then
+            return
+        end
+
+		Ragebot:ScanPlayer(Target, Weapon)
+	end
+
+	getgenv().rageloop = Library:Connect(RunService.RenderStepped, Ragebot.ScanPlayers)
+end
