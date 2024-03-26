@@ -474,6 +474,104 @@ do
 			PlayOnRemove = true
 		}):Destroy()
 	end
+	function Utility:CreateDrawingTracer(Cfg)
+		Cfg = {
+			Positions = Cfg.Positions or {},
+			Time = Cfg.Time or 5,
+			Color = Cfg.Color or Color3fromRGB(255, 255, 255),
+			Outline = Cfg.Outline or Color3fromRGB(0, 0, 0),
+		}
+	
+		local CharacterObject = CharacterInterface.getCharacterObject()
+	
+		local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+	
+		local Tracer = {
+			["Objects"] = {},
+			["StartTick"] = os.clock(),
+		}
+	
+		for _,v in next, Cfg.Positions do
+			local OutlineObject = Utility:New("Line", {
+				Thickness = 3,
+				Transparency = 1,
+				--ZIndex = 1,
+				Color = Color3fromRGB(0, 0, 0)
+			})
+	
+			local Obj = Utility:New("Line", {
+				Thickness = 1,
+				Transparency = 1,
+				--ZIndex = 2,
+				Color = Color3fromRGB(255, 255, 255)
+			})
+	
+			Tracer.Objects[_] = {
+				["OutlineObject"] = OutlineObject,
+				["Object"] = Obj
+			}
+		end
+	
+		local Connection = RunService.Heartbeat:Connect(function()
+			local ScreenSize = Camera.ViewportSize
+	
+			local Transparency = 1
+			local OutlineTransparency = 1
+	
+			local Origin = HumanoidRootPart and HumanoidRootPart.Position or Camera.CFrame.p
+	
+			if os.clock() - Tracer.StartTick > Cfg.Time then
+				Tracer:Remove()
+				table.remove(Visuals.BulletTracerDrawings, _)
+			end
+	
+			for _,v in next, Cfg.Positions do
+				local From = _ == 1 and v or Cfg.Positions[_ - 1] or Vector3zero
+				local To = v or Vector3zero
+			
+				local DistanceFromTracer = ((v or Vector3zero) - Origin).Magnitude
+	
+				local Trans = Transparency
+				local OutlineTrans = OutlineTransparency
+	
+				local Objects = Tracer.Objects[_]
+	
+				local OutlineObject = Objects.OutlineObject
+				local Object = Objects.Object
+	
+				local FromScreen, FromOnScreen = Camera:WorldToViewportPoint(From)
+				local ToScreen, ToOnScreen = Camera:WorldToViewportPoint(To)
+				
+				Object.Visible = ToOnScreen and FromOnScreen
+				OutlineObject.Visible = ToOnScreen and FromOnScreen
+	
+				if Object.Visible and OutlineObject.Visible then
+					local FromVector2 = Vector2new(FromScreen.x, FromScreen.y)
+					local ToVector2 = Vector2new(ToScreen.x, ToScreen.y)
+					
+					Object.From = FromVector2
+					Object.To = ToVector2
+					Object.Color = Cfg.Color
+		
+					OutlineObject.From = FromVector2
+					OutlineObject.To = ToVector2
+					OutlineObject.Color = Cfg.Outline
+				end
+			end
+		end)
+		Tracer.Connection = Connection
+	
+		function Tracer:Remove()
+			for _,v in next, Tracer.Objects do
+				v.OutlineObject:Remove()
+				v.Object:Remove()
+			end
+	
+			Tracer.Connection:Disconnect()
+		end
+	
+		Visuals.BulletTracerDrawings[#Visuals.BulletTracerDrawings + 1] = Tracer
+	end
 	--
 
 	-- Game Functions
