@@ -1,4 +1,4 @@
---[[
+  --[[
     Render object class thing for UI Libraries
 ]]
 
@@ -1643,7 +1643,7 @@ function components.slider(holder, options, zindex)
     local current_tween
 
     local function set(value)
-        if not value then
+        if not (value and type(value) == "number") then
             return
         end
 

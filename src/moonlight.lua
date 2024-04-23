@@ -1,5 +1,5 @@
 if not LPH_OBFUSCATED and getgenv().Moonlight then
-	getgenv().Moonlight.Libraries.Utility:Unload()
+	--getgenv().Moonlight.Libraries.Utility:Unload()
 end
 
 if not game.PlaceId == 292439477 then
@@ -19,7 +19,7 @@ end
 ]]--
 
 -- Libraries
-local Library = loadstring(game:HttpGet("https://e-z.tools/p/raw/6j3xg81igs", true))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/OxygenClub/Random-LUAS/main/tttt.lua", true))()
 --
 
 -- Services
@@ -97,7 +97,8 @@ local Modules = {
 local Utility = {
 	Drawings = {},
 	Objects = {},
-	BindToRenders = {}
+	BindToRenders = {},
+	Fonts = {}
 }
 
 local Legitbot = {
@@ -128,7 +129,12 @@ local Directions = {
 
 local Ragebot = {
 	Targets = {},
-    LastHit = os.clock()
+    LastHit = os.clock(),
+    Target = nil,
+    LastTeleport = os.clock(),
+    Teleporting = false,
+	Shots = {},
+    Index = 0,
 }
 
 local Visuals = {
@@ -148,9 +154,9 @@ local Visuals = {
 		["Galaxy"] = "rbxassetid://1120738433",
 		["Stars"] = "rbxassetid://598201818",
 		["Rainbow"] = "rbxassetid://10037165803",
+		["Skibidy Toilet"] = "rbxassetid://14488881439"
 	},
 	BulletTracers = {
-		["Drawing"] = "", -- drawing as in Drawing.new("Line")
 		["Default"] = "rbxassetid://446111271",
 		["Beam"] = "rbxassetid://7151777149",
 		["Ion Beam"] = "rbxassetid://2950987173",
@@ -248,12 +254,192 @@ local Visuals = {
 		}
 	},
 	CrosshairDrawings = {},
-	BulletTracerDrawings = {}
+	ThirdPerson = nil
 }
 
 local Misc = {
 	AutoJumpKey = false,
 	VoteKicked = false,
+	Kills = 0,
+	Chatspam = {
+		["Nerd"] = {
+			"im such a skid 😜",
+			"math is hard 🧮",
+			"i speak klingon 👽",
+			"i wear socks with sandals 👣",
+			"my pocket 😎 protector brings all the nerds to the yard",
+			"phd in quantum mechanics from hogwarts 🎓",
+			"im a nerd and im proud 🤓👊",
+			"i mainframe 💻 for fun",
+			"i dream in binary 💭",
+			"im fluent in c++ 💻",
+			"my code is poetry 📝",
+		},
+		["Random"] = {
+			"sorry i hurt your roblox ego but look -> 🤏 I DON'T CARE",
+			"table.find(scripts, 'any other script better than moonlight') -> nil 🤣🤣",
+			"i 😎 hacked my toaster",
+			"i eat ones 😋 and zeros for breakfast",
+			"i hacked nasa 🚀",
+			"im a keyboard ninja ⌨️🥋",
+			"i hacked 😈 my calculator",
+			"banlands 🔨 🗻 down 🏚️  ⏬ STOP CRASHING BANLANDS!! 🤣",
+			"password is 😡 password",
+			"i can hack anything 💻🔓",
+			"i can play doom on a pregnancy test 🎮🤰😎",
+			"i can play doom on my fridge 🎮🍕",
+			"my screen 🎨 is my canvas",
+			"i'm the king 👑 of cyber",
+			"TURN YOUR HACKS OFF!!! 🥹🥹😤😡😡😡",
+			"BROO THIS IS SO UNFAIR 😭😢 TURN OFF PATHFINDING 😡💢💢💢💢💢😒🙄",
+			"TURN TELEPORT SCANNING OFF NOWWW 😡😡💢💢💢💢💢💢😭😭😭",
+			"i surf the dark web 🕸️",
+			"votekick him!!!!!!! 😠 vk VK VK VK VOTEKICK HIM!!!!!!!!! 😠 😢 VOTE KICK !!!!! PRESS Y WHY DIDNT U PRESS Y LOL!!!!!! 😭 ",
+			"YOU VOtEkickED tHe wrong PERson!!!!!!!!!",
+			"i dream in code 💭💻",
+			"i kick kittens 🐱👟",
+			"i once 😂 kicked a soccer ball",
+			"庆崇你好我讨厌你愚蠢的母愚蠢的母庆崇",
+			"完成与草屋两个苏巴完成与草屋两个苏巴完成与草屋",
+			"诶比西迪伊艾弗吉艾尺艾杰开艾勒艾马艾娜哦屁吉吾",
+			"持有毁灭性的神经重景气游行脸红青铜色类别创意案",
+			"音频少年公民记忆欲求无尽 heywe 僵尸强迫身体哑集中排水",
+			"SETBASEWALKSPEED(999) SPEED CHEAT!!!!",
+			"i kick 🚪 doors open",
+			"i kicked a hole in space ⏰ time",
+			"i kicked my computer 💻👟",
+			"PASTE PASTE ITS PASTEEEEEDDDDDDD!!!!!!!",
+			"HAHAHAHAHAHAHA",
+			"i kicked a can down the road 🥫👟",
+			"i kickflip in my dreams 🛹💭",
+			"i kickstart my day ☕ with coffee",
+			"i kick back 🛋️ and relax",
+			"i kickstart revolutions 🔄👟",
+			"i kickflip over obstacles 🛹↗️",
+			"global🌍  warming🥵 freezing ❄️",
+			"i cooked soup 🍲 in the fridge ❄️",
+			"im a 🍦 popsicle",
+			"sweating like a ☀️ snowman in summer 😅",
+			"squirrel using 🐿️ oven mitts 🥊",
+			"cold as polar bear 🐻❄️ toenails",
+			"im hotter than the ☀️ sun 🔥",
+			"im colder than 🪐 pluto ❄️",
+			"im as cool as ice ❄️",
+			"im melting like 🧈 butter 🔥",
+			"im burning like a 🔥 furnace 💨",
+			"monkey see 🐒",
+			"monkey do 🙈",
+			"banana time 🍌",
+			"monkey business 🐵💼",
+			"monkeying around 🙊",
+			"ape escape 🦍",
+			"chimp champ 🐵🏆",
+			"gorilla warfare 🦍⚔️",
+			"jungle swing 🌴🐒",
+			"primate party 🎉🐵",
+			"ape-tastic 🦍🎉",
+		},
+		["Moonlight"] = {
+			"cant compete 😒? just buy moonlight 😊🤣🤣",
+			"falling behind? just buy moonlight 🌕💸",
+			"struggling to keep up? just buy moonlight 🌙💰",
+			"losing the race? just buy moonlight 🏁🌕",
+			"feeling inadequate? just buy moonlight 💼🌕",
+			"not enough time? just buy moonlight ⏳🌕",
+			"feeling outmatched? just buy moonlight 🥊🌕",
+			"feeling overwhelmed? just buy moonlight 😅🌕",
+			"not enough resources? just buy moonlight 🛠️🌕",
+			"can't keep up? Embrace Moonlight 🌕",
+    		"falling short? Let Moonlight shine 🌙",
+    		"feeling overshadowed? Bask in Moonlight 🌕",
+    		"need a boost? Harness Moonlight 🌙",
+    		"losing ground? Embrace the glow of Moonlight 🌕",
+    		"struggling to compete? Find solace in Moonlight 🌙",
+    		"need an edge? Seek guidance from Moonlight 🌕",
+    		"lost in the darkness? Find clarity in Moonlight 🌙",
+    		"searching for a path? Follow the trail of Moonlight 🌕",
+    		"feeling eclipsed? Find your light in Moonlight 🌙",
+    		"lost your way? Let Moonlight guide you 🌕",
+		},
+		["Emojis"] = {
+			[1] = "😊",
+			[2] = "😢",
+			[3] = "😂",
+			[4] = "❤️",
+			[5] = "👍",
+			[6] = "👎",
+			[7] = "🔥",
+			[8] = "👏",
+			[9] = "🚀",
+			[10] = "🤔",
+			[11] = "😮",
+			[12] = "😎",
+			[13] = "😍",
+			[14] = "😡",
+			[15] = "👻",
+			[16] = "👽",
+			[17] = "🤖",
+			[18] = "🦄",
+			[19] = "😺",
+			[20] = "🐶",
+			[21] = "🐠",
+			[22] = "🍕",
+			[23] = "🌮",
+			[24] = "🍰",
+			[25] = "☕",
+			[26] = "🍺",
+			[27] = "🍷",
+			[28] = "🍹",
+			[29] = "🎵",
+			[30] = "🎬",
+			[31] = "🎮",
+			[32] = "⚽",
+			[33] = "🏀",
+			[34] = "⚾",
+			[35] = "🏈",
+			[36] = "🎾",
+			[37] = "⛳",
+			[38] = "🏄",
+			[39] = "⛷️",
+			[40] = "🏂",
+			[41] = "🚴",
+			[42] = "🏊",
+			[43] = "🏃",
+			[44] = "🥾",
+		},
+		["Symbols"] = {
+			[1] = "!",
+			[2] = "@",
+			[3] = "#",
+			[4] = "$",
+			[5] = "%",
+			[6] = "^",
+			[7] = "&",
+			[8] = "*",
+			[9] = "(",
+			[10] = ")",
+			[11] = "-",
+			[12] = "_",
+			[13] = "+",
+			[14] = "=",
+			[15] = "[",
+			[16] = "{",
+			[17] = "]",
+			[18] = "}",
+			[19] = "|",
+			[20] = [[\]],
+			[21] = ";",
+			[22] = ":",
+			[23] = '"',
+			[24] = "'",
+			[25] = "<",
+			[26] = ",",
+			[27] = ">",
+			[28] = ".",
+			[29] = "?",
+			[30] = "/",
+		}
+	}
 }
 
 local ESP = {
@@ -273,7 +459,9 @@ local Network = {
 		["repupdate"] = 3,
 		["bullethit"] = 6,
 	},
-	Shift = 0
+	Shift = 0,
+	Repstop = false,
+	LastRepUpdate = nil
 }
 
 local Moonlight = {
@@ -281,6 +469,7 @@ local Moonlight = {
 		Modules = Modules,
 		Utility = Utility,
 		Legitbot = Legitbot,
+		Ragebot = Ragebot,
 		Visuals = Visuals,
 		ESP = ESP,
 		Network = Network,
@@ -390,16 +579,17 @@ do
 		"Circle",
 		"Text",
 		"Line",
-		"Triangle"
+		"Triangle",
+		"Font"
 	}
 
 	-- Utility Stuff
-	function Utility:New(type, props, storage)
+	function Utility:New(type, props, storage, secondarg)
 		local IsDrawing = table.find(Utility.DrawingTypes, type)
 
 		local NewFunction = IsDrawing and Drawingnew or Instancenew
 		
-		local Object = NewFunction(type)
+		local Object = NewFunction(type, secondarg)
 
 		if props then
 			for _,v in next, props do
@@ -419,6 +609,42 @@ do
 
 		return Object
 	end
+
+	Utility.Fonts["Verdana"] = Utility:New("Font", {
+		Data = game:HttpGet("https://cdn.discordapp.com/attachments/1154475864742965330/1222520060028129411/verdana.ttf?ex=66168387&is=66040e87&hm=ebc0de5d5d449a370ecff0c8e489a12343147d3452edfc298a742cef6cc9f3da&")
+	}, nil, "Verdana")
+
+	Utility.Fonts["Verdana Bold"] = Utility:New("Font", {
+		Data = game:HttpGet("https://cdn.discordapp.com/attachments/1154475864742965330/1223019321396166757/VERDANAB.TTF?ex=66185480&is=6605df80&hm=93866130c42352c87678d67bedc6d342d441cd44f8a6cf2683582cbe951a6c35&")
+	}, nil, "Verdana Bold")
+
+	Utility.Fonts["Tahoma"] = Utility:New("Font", {
+		Data = game:HttpGet("https://cdn.discordapp.com/attachments/1154475864742965330/1222521879907012608/tahoma.ttf?ex=66168539&is=66041039&hm=5e9bd259382173d4a2d716c3ceea242767d4be313ac266d9dbd54ae5d1bb8c1c&")
+	}, nil, "Tahoma")
+
+	Utility.Fonts["Tahoma Bold"] = Utility:New("Font", {
+		Data = game:HttpGet("https://cdn.discordapp.com/attachments/1154475864742965330/1223019425058390076/TAHOMABD.TTF?ex=66185499&is=6605df99&hm=d4a2fe0ee1dde9f53941c7f89d3a002298cc8ffd06abda8d411688628e80f6af&")
+	}, nil, "Tahoma Bold")
+
+	Utility.Fonts["Pixel"] = Utility:New("Font", {
+		Data = game:HttpGet("https://cdn.discordapp.com/attachments/1154475864742965330/1222521408853119067/smallest_pixel-7.ttf?ex=661684c9&is=66040fc9&hm=d3b8475eee8d8271883b58d2a4bcc8f8b5675653d50b8ba44e98fce6b9f879fa&")
+	}, nil, "Pixel")
+
+	Utility.Fonts["Comic Sans"] = Utility:New("Font", {
+		Data = game:HttpGet("https://cdn.discordapp.com/attachments/965681136795807884/1222542620690219109/comic.ttf?ex=6616988a&is=6604238a&hm=d4d85109ebdcfff79b3cc2fba6e6b0d901348b8c8bcb4810a9940820b8ea6d3e&")
+	}, nil, "Comic")
+
+	-- Utility.Fonts["CSGO Icons"] = Utility:New("Font", {
+	-- 	Data = game:HttpGet("https://cdn.discordapp.com/attachments/1154475864742965330/1223018868839284736/WeaponID.ttf?ex=66185414&is=6605df14&hm=d7f9f3e45e795213f61979231a3a474aa111053ae3a2894727243af4269b049f&")
+	-- }, nil, "CSGO Icons")
+
+	Utility.Fonts["Konfuciuz"] = Utility:New("Font", {
+		Data = game:HttpGet("https://cdn.discordapp.com/attachments/947458340978556939/1223022473738719332/konfuciuz.regular.ttf?ex=66185770&is=6605e270&hm=2f0ca9b4b8e3b49ed86dccd5cd1dac6d79d97d7f68fdd278be15173050e214bf&")
+	}, nil, "Konfuciuz")
+
+	Utility.Fonts["Penis"] = Utility:New("Font", {
+		Data = game:HttpGet("https://cdn.discordapp.com/attachments/1154475864742965330/1223022748188545134/Penis_Typography_Regular.ttf?ex=661857b1&is=6605e2b1&hm=d0e20a69104fa1df02e21322d5fa8f892c0ee8e13bdd06141b9b5c0410e025c0&")
+	}, nil, "Penis")
 
 	function Utility:Unload()
 		Library:Unload()
@@ -461,116 +687,48 @@ do
 
 		Utility.BindToRenders[name] = nil
 	end
-	function Utility:PlaySound(id, volume, pitch)
-		id = tostring(id)
-	
-		id = id:gsub("rbxassetid://", "")
+	function Utility:PlaySound(id, volume, pitch, notstart)
+		if not notstart then
+			id = tostring(id)
+			id = id:gsub("rbxassetid://", "")
+		end
+
+		local StartText = notstart and "" or "rbxassetid://"
 	
 		local Sound = Utility:New("Sound", {
 			Parent = Camera,
 			Volume = volume / 100,
 			Pitch = pitch / 100,
-			SoundId = "rbxassetid://" .. tostring(id),
+			SoundId = StartText .. tostring(id),
 			PlayOnRemove = true
 		}):Destroy()
 	end
-	function Utility:CreateDrawingTracer(Cfg)
-		Cfg = {
-			Positions = Cfg.Positions or {},
-			Time = Cfg.Time or 5,
-			Color = Cfg.Color or Color3fromRGB(255, 255, 255),
-			Outline = Cfg.Outline or Color3fromRGB(0, 0, 0),
-		}
-	
-		local CharacterObject = CharacterInterface.getCharacterObject()
-	
-		local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
-	
-		local Tracer = {
-			["Objects"] = {},
-			["StartTick"] = os.clock(),
-		}
-	
-		for _,v in next, Cfg.Positions do
-			local OutlineObject = Utility:New("Line", {
-				Thickness = 3,
-				Transparency = 1,
-				--ZIndex = 1,
-				Color = Color3fromRGB(0, 0, 0)
-			})
-	
-			local Obj = Utility:New("Line", {
-				Thickness = 1,
-				Transparency = 1,
-				--ZIndex = 2,
-				Color = Color3fromRGB(255, 255, 255)
-			})
-	
-			Tracer.Objects[_] = {
-				["OutlineObject"] = OutlineObject,
-				["Object"] = Obj
-			}
-		end
-	
-		local Connection = RunService.Heartbeat:Connect(function()
-			local ScreenSize = Camera.ViewportSize
-	
-			local Transparency = 1
-			local OutlineTransparency = 1
-	
-			local Origin = HumanoidRootPart and HumanoidRootPart.Position or Camera.CFrame.p
-	
-			if os.clock() - Tracer.StartTick > Cfg.Time then
-				Tracer:Remove()
-				table.remove(Visuals.BulletTracerDrawings, _)
-			end
-	
-			for _,v in next, Cfg.Positions do
-				local From = _ == 1 and v or Cfg.Positions[_ - 1] or Vector3zero
-				local To = v or Vector3zero
-			
-				local DistanceFromTracer = ((v or Vector3zero) - Origin).Magnitude
-	
-				local Trans = Transparency
-				local OutlineTrans = OutlineTransparency
-	
-				local Objects = Tracer.Objects[_]
-	
-				local OutlineObject = Objects.OutlineObject
-				local Object = Objects.Object
-	
-				local FromScreen, FromOnScreen = Camera:WorldToViewportPoint(From)
-				local ToScreen, ToOnScreen = Camera:WorldToViewportPoint(To)
-				
-				Object.Visible = ToOnScreen and FromOnScreen
-				OutlineObject.Visible = ToOnScreen and FromOnScreen
-	
-				if Object.Visible and OutlineObject.Visible then
-					local FromVector2 = Vector2new(FromScreen.x, FromScreen.y)
-					local ToVector2 = Vector2new(ToScreen.x, ToScreen.y)
-					
-					Object.From = FromVector2
-					Object.To = ToVector2
-					Object.Color = Cfg.Color
-		
-					OutlineObject.From = FromVector2
-					OutlineObject.To = ToVector2
-					OutlineObject.Color = Cfg.Outline
+	function Utility:UnlockMouse(toggle)
+        if not toggle then
+            return
+        end
+
+		UserInputService.MouseIconEnabled = true
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+    end
+
+	function Utility:GetFiles(folder, extensions)
+		local LibraryFolder = ("%s\\%s\\%s\\"):format(Library.folder, Library.game, folder)
+
+		local Files = isfolder(LibraryFolder) and listfiles(LibraryFolder) or {}
+		local StoredFiles = {}
+		local FileNames = {}
+
+		for _,v in next, Files do
+			for _,ext in next, extensions do
+				if v:find(ext) then
+					StoredFiles[#StoredFiles + 1] = v
+					FileNames[#FileNames + 1] = v:gsub(LibraryFolder, "")
 				end
 			end
-		end)
-		Tracer.Connection = Connection
-	
-		function Tracer:Remove()
-			for _,v in next, Tracer.Objects do
-				v.OutlineObject:Remove()
-				v.Object:Remove()
-			end
-	
-			Tracer.Connection:Disconnect()
 		end
 	
-		Visuals.BulletTracerDrawings[#Visuals.BulletTracerDrawings + 1] = Tracer
+		return StoredFiles, FileNames
 	end
 	--
 
@@ -737,6 +895,8 @@ do
 	end))
 
 	Library:Connect(RunService.Heartbeat, LPH_NO_VIRTUALIZE(function()
+		Utility:UnlockMouse(Library.open)
+
 		ScreenSize = Camera.ViewportSize
 		BarrelPosition = nil
 
@@ -754,44 +914,122 @@ do
 	end))
 end
 
-do	
-    function Ragebot:FakeShoot(info)
-        local Weapon = info.Weapon
+do
+	function Ragebot:LogShot(player, damage, time, tick)
+		Ragebot.Shots[player] = {
+			Damage = damage,
+			Time = time,
+			Tick = tick
+		}
+	end
+	function Ragebot:GetShotInfo(player)
+		return Ragebot.Shots[player] or nil
+	end
+    function Ragebot:ClearShotInfo(player)
+        Ragebot.Shots[player] = nil
+    end
+	function Ragebot:GetDamage(Weapon, Distance, Hitbox)
+		local DamageGraphs = Weapon:getWeaponStat("damageGraph") 
 
+		if not DamageGraphs then 
+			return 0 
+		end
+		for currentIndex = 1, #DamageGraphs do
+			local dataPoint = DamageGraphs[currentIndex]
+
+			if dataPoint.distance >= Distance then
+				local prevIndex = currentIndex - 1
+				local prevDataPoint = DamageGraphs[prevIndex]
+
+				if prevDataPoint then
+					local distanceRatio = (Distance - prevDataPoint.distance)
+						/ (dataPoint.distance - prevDataPoint.distance)
+					return (1 - distanceRatio) * prevDataPoint.damage + distanceRatio * dataPoint.damage
+				end
+
+				return dataPoint.damage
+			end
+		end
+
+		local endDamage = DamageGraphs[#DamageGraphs].damage
+
+		if Hitbox == "Head" then
+			endDamage = Weapon:getWeaponStat("multhead")
+		elseif Hitbox == "Torso" then
+			endDamage= Weapon:getWeaponStat("multtorso")
+		else
+			endDamage *= (Weapon:getWeaponStat("multlimb") or 1)
+		end
+
+		return endDamage
+	end
+    function Ragebot:Teleport(positions, reverse)
+        reverse = reverse or false
+
+        Network.Repstop = true
+
+        if type(positions) == "table" then
+            for i = 1, #positions do
+                i = reverse and #positions - i or i
+
+                local Position = positions[i]
+
+                if not Position then
+                    continue
+                end
+
+                Network:Send("repupdate", Position, Vector2zero, GameClock.getTime(), true)
+            end
+        else
+            Network:Send("repupdate", positions, Vector2zero, GameClock.getTime(), true)
+        end
+
+        --Network.Shift += 1 / (60 - #positions)
+
+        Network.Repstop = false
+    end
+
+    function Ragebot:FakeShoot(info, weapon)
         -- ok i need to figure out how to add fake bullet here
 
-		local CharacterObject = CharacterInterface.getCharacterObject()
-        Weapon:impulseSprings(CharacterObject:getSpring("aimspring").p)
+		local Object = weapon._characterObject
+		if Object.animating then
+			weapon._inspecting = false
+			weapon:cancelAnimation(weapon._reloadCancelTime)
+		end
+		
+        local CharacterObject = CharacterInterface.getCharacterObject()
+        weapon:impulseSprings(CharacterObject:getSpring("aimspring").p)
 
-        if Weapon:getWeaponStat("type") == "REVOLVER" and not Weapon:getWeaponStat("caselessammo") then
+        if weapon:getWeaponStat("type") == "REVOLVER" and not weapon:getWeaponStat("caselessammo") then
             Sound.play("metalshell", 0.1)
-        elseif Weapon:getWeaponStat("type") == "SHOTWeapon" then 
+        elseif weapon:getWeaponStat("type") == "SHOTWeapon" then 
             Sound.play("shotWeaponshell", 0.2)
-        elseif Weapon:getWeaponStat("type") == "SNIPER" then
-            Weapon:playAnimation("pullbolt", true, true)
+        elseif weapon:getWeaponStat("type") == "SNIPER" then
+            weapon:playAnimation("pullbolt", true, true)
 
             Sound.play("metalshell", 0.15, 0.8)
         end
 
-        if Weapon:getWeaponStat("sniperbass") then
+        if weapon:getWeaponStat("sniperbass") then
             Sound.play("1PsniperEcho", 1)
             Sound.play("1PsniperBass", 0.75)
         end
 
-        if not Weapon:getWeaponStat("nomuzzleeffects") then
+        if not weapon:getWeaponStat("nomuzzleeffects") then
             Effects.muzzleflash(
-                Weapon._barrelPart, 
-                Weapon:getWeaponStat("hideflash")
+                weapon._barrelPart, 
+                weapon:getWeaponStat("hideflash")
             )
         end
 
         Utility:PlaySound(
-            Weapon:getWeaponStat("firesoundid"),
-            Weapon:getWeaponStat("firevolume") * 100,
-            Weapon:getWeaponStat("firepitch") * 100
+            weapon:getWeaponStat("firesoundid"),
+            weapon:getWeaponStat("firevolume") * 100,
+            weapon:getWeaponStat("firepitch") * 100
         )
 
-        HudCrosshairsInterface.fireHitmarker("Head")
+        HudCrosshairsInterface.fireHitmarker(Library.Flags["ragebot_hitbox"])
     end
 
     function Ragebot:Shift(info)
@@ -799,33 +1037,75 @@ do
             Range = info.Range or 1,
             Position = info.Position or nil,
             Storage = info.Storage or {},
-            ReturnFirePos = info.ReturnFirePos or false
+            Teleport = info.Teleport or false,
+            FirePos = info.FirePos or false,
+            Raycast = info.Raycast or false
         }
 
         local Position = info.Position
         local Range = info.Range
         local Storage = info.Storage
 
-        if not Storage then
-            return
+        if not Position then
+            return Storage
         end
 
         for _,v in next, Directions do
-            local Ray = workspace:Raycast(Position, (v * Range), RayParams)
+            local Ray = info.Raycast and workspace:Raycast(Position, (v * Range), RayParams) or nil
             local ReturnedPos = Ray and (Ray.Position - v) or Position + (v * Range)
+            local Teleport = {}
 
-            Storage[#Storage] = info.ReturnFirePos and {
-                Position = ReturnedPos
-            } or ReturnedPos
+            if info.Teleport and (ReturnedPos - Position).Magnitude > 0 then
+                Teleport = {ReturnedPos}
+            end
+
+            Storage[#Storage + 1] = info.FirePos and { Position = ReturnedPos, Teleport = Teleport } or ReturnedPos
         end
 
         return Storage
     end
 
-    function Ragebot:Shoot(info)
-        local Weapon = info.Weapon
+    -- function Ragebot:ChopUp(p1, p2, p3)
+    --     local positions = {}
+    --     local direction = (p2 - p1).Unit
+    --     local distance = (p2 - p1).Magnitude
+    --     local steps = mathfloor(distance / p3)
+    --     for i = 1, steps do
+    --         local pos = p1 + direction * (i * (p3 or 2))
+    --         tableinsert(positions, pos)
+    --     end
+    --     tableinsert(positions, p2)
+    --     return positions
+    -- end
 
-        local Firerate = 60 / FirearmObject.getFirerate(Weapon)
+    -- function Ragebot:Shift(position, range, firepos, teleport)
+    --     firepos = firepos or false
+    --     teleport = teleport or false
+
+    --     if not position then
+    --         return {}
+    --     end
+
+    --     local ShiftedPositions = firepos and {
+    --         { Position = position, Teleport = {} }
+    --     } or { position }
+    --     local Teleport = {}
+
+    --     for _,v in next, Directions do
+    --         local Position = position + (v * range)
+
+    --         if teleport and (Position - position).Magnitude >= 40 then
+    --             Teleport[#Teleport + 1] = Position --Ragebot:ChopUp(position, Position, 50 / 3)
+    --         end
+
+    --         ShiftedPositions[#ShiftedPositions + 1] = firepos and {Position = Position, Teleport = Teleport} or Position
+    --     end
+
+    --     return ShiftedPositions
+    -- end
+
+    function Ragebot:Shoot(info, weapon)
+        local Firerate = 60 / FirearmObject.getFirerate(weapon)
 
         local HitTick = os.clock()
         if HitTick - Ragebot.LastHit <= Firerate then
@@ -834,25 +1114,33 @@ do
 
         Ragebot.LastHit = HitTick
 
-        -- // i was too lazy to make reload thing so i stole it
-        local WeaponData = info.WeaponData
+        local LastRepUpdate = Network.LastRepUpdate
 
-        Weapon._magCount -= 1
-        if Weapon._magCount < 1 then
-            local newCount = WeaponData.magsize + (WeaponData.chamber and 1 or 0) + Weapon._magCount
-            if Weapon._spareCount >= newCount then
-                Weapon._magCount += newCount
-                Weapon._spareCount -= newCount
+        -- if info.Teleport then
+        --     if #info.Teleport > 0 then
+        --         Ragebot:Teleport(info.Teleport, false)
+        --     end
+        -- end
+
+        local WeaponData = weapon._weaponData
+
+        if weapon._magCount < 1 then
+            local newCount = WeaponData.magsize + (WeaponData.chamber and 1 or 0) + weapon._magCount
+            if weapon._spareCount >= newCount then
+                weapon._magCount += newCount
+                weapon._spareCount -= newCount
             else
-                Weapon._magCount += Weapon._spareCount
-                Weapon._spareCount = 0
+                weapon._magCount += weapon._spareCount
+                weapon._spareCount = 0
             end
             Network:Send("reload")
+        else
+            weapon._magCount -= 1
         end
 
         local Bullets = {}
 
-        local FireCount = Weapon._fireCount
+        local FireCount = weapon._fireCount
 
         for i = 1, WeaponData.pelletcount or 1 do
             FireCount += 1
@@ -860,170 +1148,273 @@ do
             Bullets[i] = { info.Trajectory, FireCount }            
         end
 
-        Weapon._fireCount = FireCount
+        weapon._fireCount = FireCount
 
-        local Clock = GameClock.getTime()
+		if Library.Flags["shift_fire"] or game.PlaceId ~= 292439477 then
+			Network.Shift += Firerate
+		end
 
-        --Network.Shift += Firerate
-
-        Network:Send("newbullets", Weapon.uniqueId, {
+        Network:Send("newbullets", weapon.uniqueId, {
             camerapos = info.FirePosition,
             firepos = info.FirePosition,
             bullets = Bullets,
-        }, Clock)
+        }, GameClock.getTime())
 
-        for _,v in next, Bullets do
-            Network:Send("bullethit", Weapon.uniqueId, info.Player.Player, info.HitPosition, "Head", v[2], Clock)
-        end
+		local TimeHit = Physics.timehit(info.FirePosition, info.Trajectory, PublicSettings.bulletAcceleration, info.HitPosition)
 
-        Ragebot:FakeShoot(info)
-    end
+		--print(info.Player.PlayerPosition, Network.LastRepUpdate)
 
-	function Ragebot:ScanPlayer(player, weapon)
-		if not player then
-			return
-		end
-
-		local CharacterObject = CharacterInterface.getCharacterObject()
-		local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
-
-		local BarrelPosition = weapon and weapon._barrelPart and weapon._barrelPart.Position or HumanoidRootPart.Position
-
-        local Character = player.Character
-
-		local ThirdPersonObject = player.ThirdPersonObject
-
-		local ReplicationObject = ThirdPersonObject._replicationObject
-
-		local ReceivedPosition = ReplicationObject._receivedPosition or nil
-
-		local WeaponData = weapon._weaponData
-
-		local FirePosition = {
-			{Position = BarrelPosition}
+        local Damage = Ragebot:GetDamage(weapon, (info.Player.PlayerPosition - info.Origin).Magnitude, Library.Flags["ragebot_hitbox"])
+        
+        local OldShot = Ragebot:GetShotInfo(info.Player.Player.Name) or {
+			Damage = 0
 		}
 
-        local HitPositions = {
-            ReceivedPosition,
-            Character.Head.Position,
-        }
+        Ragebot:LogShot(info.Player.Player.Name, OldShot.Damage + Damage, TimeHit, HitTick)
+
+        for _,v in next, Bullets do
+            Network:Send("bullethit", weapon.uniqueId, info.Player.Player, info.HitPosition, Library.Flags["ragebot_hitbox"], v[2], GameClock.getTime())
+        end
+
+        Ragebot:FakeShoot(info, weapon)
+
+        -- if info.Teleport then
+        --     if #info.Teleport > 0 then
+        --         Ragebot:Teleport({LastRepUpdate}, false)
+        --     end
+        -- end
+    end
+
+    function Ragebot:ScanPlayer(player, weapon, delta)
+        if not player then
+            return
+        end
+
+        local WeaponData = weapon._weaponData
+
+
+        local BarrelPosition = weapon and weapon._barrelPart and weapon._barrelPart.Position or player.HumanoidRootPart.Position
+        local OriginPosition = BarrelPosition
+
+        local FirePositions = {
+			{Position = OriginPosition, Teleport = {}}
+		}
+        local HitPositions = {player.PlayerPosition}
 
 		if Library.Flags["rage_fire_pos"] then
-			FirePosition = Ragebot:Shift({
-				Storage = FirePosition,
-				Position = HumanoidRootPart.Position,
-				Range = Library.Flags["rage_fire_pos_amount"],
-				ReturnFirePos = true,
-			})
+        	FirePositions = Ragebot:Shift({
+                Storage = FirePositions,
+                Position = OriginPosition, 
+                Range = Library.Flags["rage_fire_pos_amount"], 
+                FirePos = true
+            })
 		end
 
 		if Library.Flags["rage_hitbox"] then
-			HitPositions = Ragebot:Shift({
-				Storage = HitPositions,
-				Position = ReceivedPosition or Character.Head.Position,
-				Range = Library.Flags["rage_hitbox_amount"]
-			})
+            HitPositions = Ragebot:Shift({
+                Storage = HitPositions,
+                Position = player.PlayerPosition, 
+                Range = Library.Flags["rage_hitbox_amount"], 
+            })
 		end
 
-		for _, FirePosTable in next, FirePosition do
-            for _, HitPosition in next, HitPositions do
-                local FirePos = FirePosTable and FirePosTable.Position or Vector3zero
+        -- if not Network.Repstop then
+        --     FirePositions = Ragebot:Shift({
+        --         Storage = FirePositions,
+        --         Position = OriginPosition,
+        --         Range = 200,
+        --         FirePos = true,
+        --         Teleport = true,
+        --         Raycast = true
+        --     })
+        -- end
 
-                if not (FirePos and HitPosition) then
+        for _,FirePosition in next, FirePositions do
+            for _,HitPosition in next, HitPositions do
+                if not (FirePosition and HitPosition) then
+                    continue
+                end
+				
+				local FirePos = FirePosition.Position
+
+                local Trajectory = Utility:Trajectory(FirePos, -Gravity, HitPosition, WeaponData.bulletspeed)
+
+                if not Trajectory then
                     continue
                 end
 
-                local Trajectory = Utility:Trajectory(FirePos, -Gravity, HitPosition, WeaponData.bulletspeed)
-				
-                if BulletCheck(FirePos, HitPosition, Trajectory, -Gravity, WeaponData.penetrationdepth, 1 / 60) then
+                if BulletCheck(FirePos, HitPosition, Trajectory, -Gravity, WeaponData.penetrationdepth, 1/45) then                                        
                     Ragebot:Shoot({
-                        Player = player,
-                        FirePosition = FirePos,
-                        BarrelPosition = BarrelPosition,
-                        HitPosition = HitPosition,
-                        Trajectory = Trajectory,
-                        Weapon = weapon,
-                        WeaponData = WeaponData
-                    })
+                        ["Player"] = player,
+                        ["HitPosition"] = HitPosition,
+                        ["FirePosition"] = FirePos,
+                        ["Teleport"] = FirePosition.Teleport,
+                        ["Trajectory"] = Trajectory,
+						["Origin"] = OriginPosition
+                    }, weapon)
 
-                    return
+					return
                 end
             end
-		end
+        end
 
-		return
-	end
+        return
+    end
 
-	function Ragebot:GetTargets()
-		Ragebot.Targets = {}
+    function Ragebot:GetTargets()
+        Ragebot.Targets = {}
 
-		for _,v in next, Players:GetPlayers() do
-			if not (Utility:IsAlive(v) and v ~= LocalPlayer and v.Team ~= LocalPlayer.Team) then
+        Ragebot.Target = nil
+
+        local CharacterObject = CharacterInterface.getCharacterObject()
+        local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+
+        for _,v in next, Players:GetPlayers() do
+            if not (Utility:IsAlive(v) and v ~= LocalPlayer and v.Team ~= LocalPlayer.Team) then
+                continue
+            end
+
+			if Library.Flags["ignore_friends"] and Library.Playerlist:IsTagged(v, "Friended") then
 				continue
 			end
 
             local Character = Utility:GetCharacter(v)
-
-            local CharacterObject = CharacterInterface.getCharacterObject()
-            local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
-
-            local Origin = HumanoidRootPart and HumanoidRootPart.Position or Camera.CFrame.p
-
             local ThirdPersonObject = Utility:GetThirdPersonObject(v)
             local ReplicationObject = ThirdPersonObject._replicationObject
-            local ReceivedPosition = ReplicationObject._receivedPosition or Character.Head.Position
 
-            local DistanceFromPlayer = (ReceivedPosition - Origin).Magnitude
+            local ReceivedPosition = ReplicationObject._receivedPosition
 
-			tableinsert(Ragebot.Targets, {
-				Player = v,
-				ThirdPersonObject = ThirdPersonObject,
-				Health = Utility:GetHealth(v) or 0,
-                Distance = DistanceFromPlayer,
-				Character = Character
-			})
-		end
+            if not ReceivedPosition then
+                continue
+            end
+            
+            local PlayerPosition = ReceivedPosition or Character[Library.Flags["ragebot_hitbox"]].Position
 
-		tablesort(Ragebot.Targets, function(Index1, Index2)
-			return Index1.Distance < Index2.Distance
-		end)
-	end
+            local Origin = HumanoidRootPart.Position
 
-	function Ragebot.ScanPlayers()
+            local Distance = (PlayerPosition - Origin).Magnitude
+
+			local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+            tableinsert(Ragebot.Targets, {
+                ["Player"] = v,
+                ["Character"] = Character,
+                ["ThirdPersonObject"] = ThirdPersonObject,
+                ["ReplicationObject"] = ReplicationObject,
+                ["PlayerPosition"] = PlayerPosition,
+                ["Distance"] = Distance,
+                ["HumanoidRootPart"] = HumanoidRootPart
+            })
+        end
+
+        tablesort(Ragebot.Targets, function(Index1, Index2)
+            return Index1.Distance < Index2.Distance
+        end)
+
+        Ragebot.Index = 1
+
+        return Ragebot.Targets[1]
+    end
+
+    function Ragebot.ScanPlayers(delta)
 		if not Library.Flags["ragebot"] then
 			return
 		end
 
-		local Weapon, WeaponController = Utility:GetLocalWeapon()
+        local Weapon, WeaponController = Utility:GetLocalWeapon()
 
-		if not (Weapon and WeaponController and RoundSystemClientInterface.isRunning() and not RoundSystemClientInterface.isCountingDown()) then
-			return
-		end
+        if not (Weapon and WeaponController and RoundSystemClientInterface.isRunning() and not RoundSystemClientInterface.isCountingDown()) then
+            return
+        end
 
         if not (Weapon._spareCount and Weapon._magCount) then
             return
         end
 
-		if Weapon._spareCount <= 0 and Weapon._magCount <= 0 then
-			return
-		end
-
-		Ragebot:GetTargets()
-
-		local Target = Ragebot.Targets[1]
-
-		if not Target then
-			return
-		end
-
-        if Library.Playerlist:IsTagged(Target.Player, "Friended") then
+        if Weapon._spareCount <= 0 and Weapon._magCount <= 0 then
             return
         end
 
-		Ragebot:ScanPlayer(Target, Weapon)
-	end
+        Ragebot.Index = Ragebot.Index + 1
+        local Target = Ragebot.Targets[Ragebot.Index]
 
-	Library:Connect(RunService.RenderStepped, Ragebot.ScanPlayers)
+        if not Target then
+            Target = Ragebot:GetTargets()
+            if not Target then
+                return
+            end
+        end
+
+        local Shot = Ragebot:GetShotInfo(Target.Player.Name)
+        if Library.Flags["rage_anti_over"] and Shot then
+            local Ping = LocalPlayer:GetNetworkPing() or 0.1
+            local Health = Utility:GetHealth(Target.Player)
+
+            local TravelTime = (Ping + Shot.Time) * 2
+            local TimeFromShot = os.clock() - Shot.Tick
+
+            if Shot.Tick and Shot.Time and Health <= Shot.Damage and TimeFromShot < TravelTime then
+                return
+            end
+        end
+
+        Ragebot.Target = Target.Player
+
+        Ragebot:ScanPlayer(Target, Weapon, delta)
+    end
+
+    PlayerStatusEvents.onPlayerDied:Connect(function(player)
+        Ragebot:ClearShotInfo(player.victim.Name)
+    end)
+
+	PlayerStatusEvents.onPlayerSpawned:Connect(function(v, spawnpos)
+		if not Library.Flags["ragebot"] then
+			return
+		end
+		
+		local CharacterObject = CharacterInterface.getCharacterObject()
+        local HumanoidRootPart = CharacterObject and CharacterObject._rootPart
+
+		if not HumanoidRootPart then
+			return
+		end
+
+        if not (Utility:IsAlive(v) and v ~= LocalPlayer and v.Team ~= LocalPlayer.Team) then
+            return
+        end
+
+        if Library.Flags["ignore_friends"] and Library.Playerlist:IsTagged(v, "Friended") then
+            return
+        end
+
+        local Character = Utility:GetCharacter(v)
+        local ThirdPersonObject = Utility:GetThirdPersonObject(v)
+        local ReplicationObject = ThirdPersonObject._replicationObject
+
+        local Origin = HumanoidRootPart.Position
+
+        local Distance = (spawnpos - Origin).Magnitude
+
+        local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+        Ragebot.Target = v
+
+        Ragebot.Index = 0
+        tableinsert(Ragebot.Targets, 1, {
+            ["Player"] = v,
+            ["Character"] = Character,
+            ["ThirdPersonObject"] = ThirdPersonObject,
+            ["ReplicationObject"] = ReplicationObject,
+            ["PlayerPosition"] = spawnpos,
+            ["Distance"] = Distance,
+            ["HumanoidRootPart"] = HumanoidRootPart
+        })
+
+        Ragebot.ScanPlayers(1 / 60)
+    end)
+
+
+    Library:Connect(RunService.RenderStepped, LPH_NO_VIRTUALIZE(function(delta) Ragebot.ScanPlayers(1 / 60) end))
 end
 
 -- Legitbot
@@ -1336,7 +1727,7 @@ do
 		--if Env.Moonlight then
 			local Target = Legitbot.SilentAim.Target
 
-			if Target and Library.Flags["silent_aim_hitchance"] >= Target.Hitchance then
+			if not Library.Flags["ragebot"] and Target and Library.Flags["silent_aim_hitchance"] >= Target.Hitchance then
 				local Weapon, WeaponController = Utility:GetLocalWeapon()
 
 				if Weapon and Weapon._weaponData and Weapon._weaponData.bulletspeed then
@@ -1429,6 +1820,64 @@ do
 			Fill = Obj
 		}
 	end
+
+	do
+        setthreadcaps(8)
+
+        local Player = Instancenew("Player")
+        Visuals.ThirdPerson = ReplicationObject.new(Player)
+        Visuals.ThirdPerson._player = LocalPlayer
+
+        Player:Destroy()
+        Player = nil    
+    end
+
+	function Visuals:NewThirdPerson()
+		local ThirdPerson = Visuals.ThirdPerson
+		local thirdPersonObject = ThirdPerson:getThirdPersonObject()
+
+		if not thirdPersonObject then
+			local Weapon, WeaponController = Utility:GetLocalWeapon()
+            local ActiveWeaponRegistry = WeaponController._activeWeaponRegistry
+            local ActiveWeaponData = ThirdPerson._activeWeaponRegistry
+
+			for i = 1, 4 do
+                local WeaponData = ActiveWeaponRegistry[i]
+                if WeaponData then
+                    local Data = {
+                        weaponName = WeaponData._weaponName,
+                        weaponData = WeaponData._weaponData,
+                        attachmentData = WeaponData._weaponAttachments,
+                        camoData = WeaponData._camoList or WeaponData._camoData
+                    }
+                    ActiveWeaponData[i] = Data
+                end
+            end
+
+			ThirdPerson._thirdPersonObject = ThirdPersonObject.new(ThirdPerson._player, nil, ThirdPerson)
+			
+			local WeaponIndex =  WeaponController._activeWeaponIndex
+
+			if WeaponIndex == 3 then
+				ThirdPerson._thirdPersonObject:equipMelee(3)
+			else
+				ThirdPerson._thirdPersonObject:equip(WeaponIndex, true)
+			end
+
+			ThirdPerson._alive = true
+		end
+	end
+
+    function Visuals.ArmVisible(Invisible: boolean)
+        for _, part in ipairs(Camera:GetDescendants()) do
+            if part:IsA("BasePart") and part.Transparency ~= (Invisible and 1.3 or 0) and part.Transparency ~= 1 then
+                part.Transparency = Invisible and 1.3 or 0
+            end
+            if part.Name == "Sleeves" then
+                part:Destroy()
+            end
+        end
+    end
 
 	function Visuals:ApplyChams(part, material, color, transparency, decal, reflectance)
 		if part:IsA("BasePart") and part.Transparency < 1 then
@@ -1595,19 +2044,6 @@ do
 	end
 
 	function Visuals:CreateBulletTracer(origin, endpos, color, time, decal)
-		if decal == "Drawing" then
-			Utility:CreateDrawingTracer({
-				Positions = {
-					origin,
-					endpos
-				},
-				Time = time,
-				Color = color,
-			})
-
-			return
-		end
-
 		local Decal = Visuals.BulletTracers[decal] or "rbxassetid://446111271"
 
 		local OriginAttachment = Utility:New("Attachment", {
@@ -1681,6 +2117,8 @@ do
 					CharacterObject.unaimedfov = Library.Flags["fov_changer_amount"]
 				end
 			end
+		else
+			Network.LastRepUpdate = nil
 		end
 	end))
 
@@ -1904,11 +2342,80 @@ do
         return OldMeleeWalkSway(...)
     end)
 	--
+
+	local oldIndex; oldIndex = hookmetamethod(game, "__newindex", LPH_JIT_MAX(function(self, index, value)
+		if checkcaller() then
+            return oldIndex(self, index, value)
+        end
+
+		if self == Camera then
+			if not (Library.Flags["thirdperson"] and CharacterInterface:isAlive()) then
+				return oldIndex(self, index, value)
+			end
+
+			if index == "CFrame" then
+				value *= CFramenew(Library.Flags["thirdperson_x"], Library.Flags["thirdperson_y"], Library.Flags["thirdperson_z"])
+			end
+		elseif self == Lighting then
+            if index == "ClockTime" and Library.Flags["time_changer"] and value ~= Library.Flags["time_changer_amount"] then 
+                value = Library.Flags["time_changer_amount"]
+            end 
+		end
+
+		return oldIndex(self, index, value)
+	end))
 	
 end --
 
 -- Misc
 do
+	function Misc:RandomMessages(message, items, min, max)
+		message = message or ""
+
+		if max > 0 then
+			for i = 1, mathrandom(min, max) do
+				local RandomMessage = items[mathrandom(1, #items)]
+
+				message = message .. RandomMessage .. " "
+			end
+		end
+
+		return message
+	end
+
+	function Misc:GetChatSpamMessage()
+		local Messages = Misc.Chatspam and Misc.Chatspam[Library.Flags["chat_spam_type"]] or readfile(("%s\\%s\\%s"):format(Library.folder, Library.game, "chatspam.txt")):split("\n") or {}
+
+		if #Messages == 0 then
+			return
+		end
+
+		local Emojis = Misc.Chatspam.Emojis
+		local Symbols = Misc.Chatspam.Symbols
+
+		local Message = ""
+
+		if Library.Flags["chat_spam_symbols"] then
+			Message = Misc:RandomMessages(Message, Symbols, Library.Flags["chat_spam_symbols_min"], Library.Flags["chat_spam_symbols_max"])
+		end
+
+		if Library.Flags["chat_spam_emojis"] then
+			Message = Misc:RandomMessages(Message, Emojis, Library.Flags["chat_spam_emojis_min"], Library.Flags["chat_spam_emojis_max"])
+		end
+
+		Message = Misc:RandomMessages(Message, Messages, 1, 1)
+
+		if Library.Flags["chat_spam_emojis"] then
+			Message = Misc:RandomMessages(Message, Emojis, Library.Flags["chat_spam_emojis_min"], Library.Flags["chat_spam_emojis_max"])
+		end
+		
+		if Library.Flags["chat_spam_symbols"] then
+			Message = Misc:RandomMessages(Message, Symbols, Library.Flags["chat_spam_symbols_min"], Library.Flags["chat_spam_symbols_max"])
+		end
+		
+		return Message
+	end
+
 	Library:Connect(RunService.RenderStepped, LPH_JIT_MAX(function()
 		local CharacterObject = CharacterInterface.getCharacterObject() or nil
         local Humanoid = CharacterObject and CharacterObject._humanoid
@@ -1996,13 +2503,34 @@ do
 		end
 	end))
 
-	taskspawn(function()
+	Library:Connect(RunService.Heartbeat, LPH_JIT_MAX(function()
+		if Library.Flags["knifebot"] and CharacterInterface:isAlive() then
+			local Target = Ragebot:GetTargets()
+
+			if Target and Target["Distance"] <= Library.Flags["knifebot_radius"] then
+				Network:Send("stab")
+				Network:Send("knifehit", Target["Player"], Library.Flags["knifebot_hitbox"], Target["PlayerPosition"], GameClock.getTime())
+			end
+		end
+	end))
+
+	taskspawn(LPH_JIT_MAX(function()
+		while taskwait(Library.Flags["chat_spam_time"] or 1) do
+			if Library.Flags["chat_spam"] and CharacterInterface:isAlive() then
+				local Text = Misc:GetChatSpamMessage() or ""
+
+				Network:Send("chatted", Text)
+			end
+		end
+	end))
+
+	taskspawn(LPH_JIT_MAX(function()
 		while taskwait(1) do
 			if Misc.VoteKicked then
 				LocalPlayer:Kick("Moonlight - Joining a new server")
 
 				local Servers = HttpService:JSONDecode(game:HttpGet(("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId)))
-			
+
 				while taskwait() do
 					for Index = #Servers.data, 1, -1 do
 						local Value = Servers.data[Index]
@@ -2015,18 +2543,27 @@ do
 				end
 			end
 		end
-	end)
+	end))
 end
 
 -- Network Handler
 do
+	local SpinAmount = 0
 	Network:Connect(function(command, ...)
 		local Args = {...}
 
+		local ThirdPerson = Visuals.ThirdPerson
+
 		if command == "newbullets" then
+			local thirdPersonObject = ThirdPerson:getThirdPersonObject()
+			
+			if thirdPersonObject then
+				thirdPersonObject:kickWeapon()
+			end
+
 			local Target = Legitbot.SilentAim.Target
 
-			if Target and Library.Flags["silent_aim_hitchance"] >= Target.Hitchance then
+			if not Library.Flags["ragebot"] and Target and Library.Flags["silent_aim_hitchance"] >= Target.Hitchance then
 				local Weapon, WeaponController = Utility:GetLocalWeapon()
 
 				if Weapon and WeaponController then
@@ -2037,6 +2574,14 @@ do
 					end
 				end
 			end
+
+			-- if Library.Flags["shift_fire"] then
+			-- 	local Weapon, WeaponController = Utility:GetLocalWeapon()
+
+			-- 	if Weapon then
+			-- 		Network.Shift += 60 / FirearmObject.getFirerate(Weapon)
+			-- 	end
+			-- end
 
 			if Library.Flags["l_bullet_tracers"] then
 				for i = 1, #Args[2].bullets do
@@ -2055,7 +2600,14 @@ do
 			end
 		elseif command == "bullethit" then
 			if Library.Flags["hitsound_enabled"] then
-				Utility:PlaySound(Library.Flags["hitsound_id"], Library.Flags["hitsound_volume"], Library.Flags["hitsound_pitch"])
+				local HitsoundLocation = ("%s\\%s\\%s\\%s"):format(Library.folder, Library.game or "Phantom Forces PC", "Sounds", Library.Flags["hitsound_id"] or "")
+				local HitsoundId = isfile(HitsoundLocation) and getcustomasset(HitsoundLocation) or ""
+
+				Utility:PlaySound(HitsoundId, Library.Flags["hitsound_volume"], Library.Flags["hitsound_pitch"], true)
+			end
+
+			if Library.Flags["suppress_only"] then
+				return
 			end
 		elseif command == "falldamage" and Library.Flags["fall_damage"] then
 			return
@@ -2064,13 +2616,138 @@ do
 				Misc.VoteKicked = true
 			end
 		elseif command == "repupdate" then
-			-- if getgenv().repstop and not Args[4] then
-			-- 	return
-			-- end
+			if Network.Repstop and not Args[4] then
+				return
+			end
+
+			Network.LastRepUpdate = Args[1]
+
+			local Tick = tick()
+			coroutinewrap(function()
+				if Library.Flags["anti_aim"] and CharacterInterface:isAlive() then
+					local Pitch = Args[2].X
+					local Yaw = Args[2].Y
+
+					if Library.Flags["anti_aim_pitch"] ~= "Off" then
+						if Library.Flags["anti_aim_pitch"] == "Up" then
+							Pitch = 2
+						elseif Library.Flags["anti_aim_pitch"] == "Down" then
+							Pitch = -2
+						elseif Library.Flags["anti_aim_pitch"] == "Random" then
+							Pitch = mathrandom(-2, 12)
+						elseif Library.Flags["anti_aim_pitch"] == "Zero" then
+							Pitch = 0
+						elseif Library.Flags["anti_aim_pitch"] == "Custom" then
+							Pitch = Library.Flags["anti_aim_custom_pitch"]
+						end
+					end
+
+					SpinAmount += Library.Flags["anti_aim_spinspeed"] / 10
+
+					if Library.Flags["anti_aim_yaw"] ~= "Off" then
+						if Library.Flags["anti_aim_yaw"] == "Backward" then
+							Yaw += math.pi
+						elseif Library.Flags["anti_aim_yaw"] == "Spin" then
+							Yaw = SpinAmount
+						elseif Library.Flags["anti_aim_yaw"] == "Random" then
+							Yaw = mathrandom(999)
+						elseif Library.Flags["anti_aim_yaw"] == "Jitter" then
+							Yaw = (Tick * Library.Flags["anti_aim_yaw_jitter_amount"])
+						elseif Library.Flags["anti_aim_yaw"] == "Custom" then
+							Yaw = Library.Flags["anti_aim_custom_yaw"]
+						end
+					end
+
+					Args[2] = Vector2new(Pitch, Yaw)
+				end
+
+				if Library.Flags["thirdperson"] and CharacterInterface:isAlive() then
+					local thirdPersonObject = ThirdPerson:getThirdPersonObject() or Visuals:NewThirdPerson()
+
+					local Velocity = Vector3zero
+					local Clock = GameClock.getTime()
+
+					ThirdPerson._smoothReplication:receive(Clock, Tick, {
+                        t = Tick,
+                        position = Args[1],
+                        velocity = Vector3.zero,
+                        angles = Args[2],
+                        breakcount = 0
+                    }, false)
+
+					ThirdPerson._updaterecieved = true
+                    ThirdPerson._receivedPosition = Args[1]
+                    ThirdPerson._receivedFrameTime = Tick
+                    ThirdPerson._lastPacketTime = Clock
+                    ThirdPerson:step(3, true)
+				else
+					local ThirdPersonObject = ThirdPerson:getThirdPersonObject()
+
+					if ThirdPersonObject then
+						ThirdPersonObject:popCharacterModel():Destroy()
+						ThirdPerson:despawn()
+					end
+				end
+			end)()
 
 			if Library.Flags["bypass_speed"] then
 				Network.Shift += 1 / 30
 			end
+		elseif command == "stance" then
+			local thirdPersonObject = ThirdPerson:getThirdPersonObject()
+			
+			if thirdPersonObject then
+				thirdPersonObject:setStance(Args[1])
+			end
+		elseif command == "aim" then
+			local thirdPersonObject = ThirdPerson:getThirdPersonObject()
+			
+			if thirdPersonObject then
+				thirdPersonObject:setAim(Args[1])
+			end
+		elseif command == "equip" then
+			local thirdPersonObject = ThirdPerson:getThirdPersonObject()
+			
+			if thirdPersonObject then
+				local WeaponIndex = Args[1]
+				if WeaponIndex == 3 then
+					thirdPersonObject:equipMelee(3)
+				else
+					thirdPersonObject:equip(WeaponIndex, true)
+				end
+			end
+		elseif command == "stab" then
+			local thirdPersonObject = ThirdPerson:getThirdPersonObject()
+			
+			if thirdPersonObject then
+				thirdPersonObject:stab()
+			end
+		elseif command == "spawn" or command == "forcereset" then
+			local thirdPersonObject = ThirdPerson:getThirdPersonObject()
+			
+			if thirdPersonObject then
+				local CharacterModel = thirdPersonObject:popCharacterModel()
+                CharacterModel:Destroy()
+                Visuals.ThirdPerson:despawn()
+			end
+		elseif command == "swapweapon" then
+			local thirdPersonObject = Visuals.ThirdPerson:getThirdPersonObject()
+            if thirdPersonObject then
+                local weapon_index = Args[2]
+                local weapon_dropped = Args[1]
+
+                if weapon_index < 3 then
+                    Visuals.ThirdPerson._activeWeaponRegistry[weapon_index] = {
+                        weaponName = weapon_dropped.Gun.Value,
+                        weaponData = ContentDatabase.getWeaponData(weapon_dropped.Gun.Value),
+                    }
+                else
+                    Visuals.ThirdPerson._activeWeaponRegistry[weapon_index] = {
+                        weaponName = weapon_dropped.Knife.Value,
+                        weaponData = ContentDatabase.getWeaponData(weapon_dropped.Knife.Value),
+                    }
+                end
+            end
 		end
 
 		local IsDependant = Network.ClockDependant[command]
@@ -2086,9 +2763,22 @@ do
 		local Args = {...}
 
 		if command == "died" then
-			if Args[1].attacker == LocalPlayer then
+			if Args[1].attacker == LocalPlayer and Args[1].victim ~= LocalPlayer then
 				if Library.Flags["killsound_enabled"] then
-					Utility:PlaySound(Library.Flags["killsound_id"], Library.Flags["killsound_volume"], Library.Flags["killsound_pitch"])
+					local KillsoundLocation = ("%s\\%s\\%s\\%s"):format(Library.folder, Library.game or "Phantom Forces PC", "Sounds", Library.Flags["killsound_id"] or "")
+					local KillsoundId = isfile(KillsoundLocation) and getcustomasset(KillsoundLocation) or ""
+
+					Utility:PlaySound(KillsoundId, Library.Flags["killsound_volume"], Library.Flags["killsound_pitch"], true)
+				end
+
+				if Library.Flags["auto_kick"] and not (Library.Flags["ignore_friends"] and Library.Playerlist:IsTagged(Args[1].victim, "Friended")) and Misc.Kills >= 0 then
+					Misc.Kills += 1
+
+					if Misc.Kills >= Library.Flags["auto_kick_amount"] then
+						Network:Send("modcmd", ("/votekick:%s:hack"):format(Args[1].victim.Name))
+
+						Misc.Kills = -1
+					end
 				end
 			end
 		end
@@ -2181,13 +2871,20 @@ do
 				Filled = true,
 				Transparency = 1
 			}),
+			["Server"] = Utility:New("Circle", {
+				Visible = false,
+				Filled = false,
+				Transparency = 1,
+				NumSides = 45,
+				Radius = 5
+			})
 		}
 	end
 
 	function ESP:GetColor(player)
 		-- ill add checks if target n shit
 
-		return Library.Flags["esp_highlight_target"] and (Legitbot.Aimbot.Target == player or Legitbot.SilentAim.Target and Legitbot.SilentAim.Target.Player == player) and Library.Flags["esp_highlight_target_color"] or Library.Flags["esp_highlight_friend"] and Library.Playerlist:IsTagged(player, "Friended") and Library.Flags["esp_highlight_friend_color"] or Library.Flags["esp_highlight_priority"] and Library.Playerlist:IsTagged(player, "Prioritized") and Library.Flags["esp_highlight_priority_color"] or nil
+		return Library.Flags["esp_highlight_target"] and (Legitbot.Aimbot.Target == player or Legitbot.SilentAim.Target and Legitbot.SilentAim.Target.Player == player or Ragebot.Target and Ragebot.Target == player) and Library.Flags["esp_highlight_target_color"] or Library.Flags["esp_highlight_friend"] and Library.Playerlist:IsTagged(player, "Friended") and Library.Flags["esp_highlight_friend_color"] or Library.Flags["esp_highlight_priority"] and Library.Playerlist:IsTagged(player, "Prioritized") and Library.Flags["esp_highlight_priority_color"] or nil
 	end
 
 	function ESP:NewPlayer(player)
@@ -2252,8 +2949,38 @@ do
 
 					local Arrow = Drawings["Arrow"]
 
-					if not OnScreen then
+					local OverrideColor = ESP:GetColor(player)
+
+					local ThirdPersonObject = Utility:GetThirdPersonObject(player)
+					local ReplicationObject = ThirdPersonObject._replicationObject
+					local ServerPosition = ReplicationObject and ReplicationObject._receivedPosition or nil
+
+					-- Server Position
+					local Server = Drawings["Server"]
+
+					local ServerPositionScreen, ServerPositionOnScreen = Vector3zero, false
+					local ServerPosition2D = Vector2zero
+					if ServerPosition ~= nil then
+						ServerPositionScreen, ServerPositionOnScreen = Camera:WorldToViewportPoint(ServerPosition)
+						ServerPosition2D = Vector2new(ServerPositionScreen.x, ServerPositionScreen.y)
+					end
+
+					--
+
+					local BoxSize, BoxPosition = ESP:BoxSizing(Torso)
+
+					if Library.Flags["esp_server_pos"] and ServerPosition and ServerPositionOnScreen and ServerPosition2D and (ServerPosition - Torso.Position).Magnitude > 20 then
+						BoxPosition = ServerPosition2D
+					end
+
+					if not (OnScreen or Library.Flags["esp_server_pos"] and ServerPosition and ServerPositionOnScreen and ServerPosition2D and (ServerPosition - Torso.Position).Magnitude > 20) then
 						ESP_P:Unrender()
+
+						Server.Visible = Library.Flags[TeamFlag .. "server"] and ServerPosition ~= nil and ServerPositionOnScreen
+						if Server.Visible then
+							Server.Position = ServerPosition2D
+							Server.Color = OverrideColor or Library.Flags[TeamFlag .. "server_color"]
+						end
 
 						if Library.Flags[TeamFlag .. "oof"] then
 							local PosT = Camera.CFrame:PointToObjectSpace(Torso.Position)
@@ -2266,7 +2993,7 @@ do
 							local Size = Library.Flags[TeamFlag .. "oof_size"]
 
 							Arrow.Visible = true
-							Arrow.Color = Library.Flags[TeamFlag .. "oof_color"]
+							Arrow.Color = OverrideColor or Library.Flags[TeamFlag .. "oof_color"]
 							Arrow.PointA = Pos + Vector2new(1, 1)
 							Arrow.PointB = Pos - Utility:RotateVector2(Direction, mathrad(35)) * Size
 							Arrow.PointC = Pos - Utility:RotateVector2(Direction, -mathrad(35)) * Size
@@ -2277,6 +3004,12 @@ do
 						return 
 					end
 
+					Server.Visible = Library.Flags[TeamFlag .. "server"] and ServerPosition ~= nil and ServerPositionOnScreen
+					if Server.Visible then
+						Server.Position = ServerPosition2D
+						Server.Color = OverrideColor or Library.Flags[TeamFlag .. "server_color"]
+					end
+
 					if Arrow.Visible then
 						Arrow.Visible = false
 					end
@@ -2285,11 +3018,7 @@ do
 
 					local BottomOffset = Vector2zero
 					local RightOffset = Vector2zero
-
-					local BoxSize, BoxPosition = ESP:BoxSizing(Torso)
-
-					local OverrideColor = ESP:GetColor(player)
-
+					
 					local Health = Utility:GetHealth(player)
 					local HealthScale = Health / 100
 
@@ -2344,12 +3073,11 @@ do
 						else
 							HealthNumberPosition = Vector2new(HealthNumberPosition.x, BoxPosition.y - 2)
 						end
-						
 
 						HealthNumber.Position = HealthNumberPosition
 						HealthNumber.Color = OverrideColor or Library.Flags[TeamFlag .. "health_number_color"]
-						HealthNumber.Font = Drawing.Fonts[Library.Flags["esp_font"]]
-						HealthNumber.Size = Library.Flags["esp_font_size"]
+						HealthNumber.Font = Utility.Fonts[Library.Flags["esp_left_font"]]
+						HealthNumber.Size = Library.Flags["esp_left_font_size"]
 						HealthNumber.Text = tostring(mathfloor(Health))
 					end
 					--
@@ -2373,11 +3101,11 @@ do
 					if Name.Visible then
 						Name.Position = BoxPosition + Vector2new(BoxSize.x / 2, -( Name.TextBounds.y + 3 ))
 						Name.Color = OverrideColor or Library.Flags[TeamFlag .. "name_color"]
-						Name.Font = Drawing.Fonts[Library.Flags["esp_font"]]
-						Name.Size = Library.Flags["esp_font_size"]
+						Name.Font = Utility.Fonts[Library.Flags["esp_top_font"]]
+						Name.Size = Library.Flags["esp_top_font_size"]
 					end
 					--
-					
+
 					-- Rank ESP
 					local Rank = Drawings["Rank"]
 
@@ -2385,8 +3113,8 @@ do
 					if Rank.Visible then
 						Rank.Position = BoxPosition + Vector2new(BoxSize.x + 3, RightOffset.y - 3)
 						Rank.Color = OverrideColor or Library.Flags[TeamFlag .. "rank_color"]
-						Rank.Font = Drawing.Fonts[Library.Flags["esp_font"]]
-						Rank.Size = Library.Flags["esp_font_size"]
+						Rank.Font = Utility.Fonts[Library.Flags["esp_right_font"]]
+						Rank.Size = Library.Flags["esp_right_font_size"]
 						Rank.Text = "LVL. " .. tostring(PlayerRank)
 
 						RightOffset = Vector2new(RightOffset.x, RightOffset.y + Rank.TextBounds.y + 2)
@@ -2400,8 +3128,8 @@ do
 					if Team.Visible then
 						Team.Position = BoxPosition + Vector2new(BoxSize.x + 3, RightOffset.y - 3)
 						Team.Color = OverrideColor or Library.Flags[TeamFlag .. "team_use_color"] and player.Team.TeamColor.Color or Library.Flags[TeamFlag .. "team_color"]
-						Team.Font = Drawing.Fonts[Library.Flags["esp_font"]]
-						Team.Size = Library.Flags["esp_font_size"]
+						Team.Font = Utility.Fonts[Library.Flags["esp_right_font"]]
+						Team.Size = Library.Flags["esp_right_font_size"]
 						Team.Text = player.Team.Name
 
 						RightOffset = Vector2new(RightOffset.x, RightOffset.y + Team.TextBounds.y + 2)
@@ -2419,8 +3147,8 @@ do
 					if Weapon.Visible then
 						Weapon.Position = BoxPosition + Vector2new(BoxSize.x / 2, BoxSize.y + 3 + BottomOffset.y)
 						Weapon.Color = OverrideColor or Library.Flags[TeamFlag .. "weapon_color"]
-						Weapon.Font = Drawing.Fonts[Library.Flags["esp_font"]]
-						Weapon.Size = Library.Flags["esp_font_size"]
+						Weapon.Font = Utility.Fonts[Library.Flags["esp_bottom_font"]]
+						Weapon.Size = Library.Flags["esp_bottom_font_size"]
 						Weapon.Text = Utility:GetWeapon(player)
 
 						BottomOffset = Vector2new(BottomOffset.x, BottomOffset.y + Weapon.TextBounds.y + 2)
@@ -2434,8 +3162,8 @@ do
 					if Distance.Visible then
 						Distance.Position = BoxPosition + Vector2new(BoxSize.x / 2, BoxSize.y + 3 + BottomOffset.y)
 						Distance.Color = OverrideColor or Library.Flags[TeamFlag .. "distance_color"]
-						Distance.Font = Drawing.Fonts[Library.Flags["esp_font"]]
-						Distance.Size = Library.Flags["esp_font_size"]
+						Distance.Font = Utility.Fonts[Library.Flags["esp_bottom_font"]]
+						Distance.Size = Library.Flags["esp_bottom_font_size"]
 						Distance.Text = tostring(mathfloor(DistanceFromTorso)) .. " studs"
 
 						BottomOffset = Vector2new(BottomOffset.x, BottomOffset.y + Distance.TextBounds.y + 2)
@@ -2481,6 +3209,14 @@ do
 	local Window = Library:Load({ title = "Moonlight ", fontsize = 14, theme = "Default", folder = "moonlight", game = MarketPlaceService:GetProductInfo(game.PlaceId).Name, playerlist = true, performancedrag = true, discord = "https://discord.gg/jYrvZb4A35" })
 	local Watermark = Library:Watermark("Moonlight | dev | v0.0.1a")
 	--
+
+	if not isfolder(("%s\\%s\\%s"):format(Library.folder, Library.game, "Sounds")) then
+		makefolder(("%s\\%s\\%s"):format(Library.folder, Library.game, "Sounds"))
+	end
+
+	if not isfile(("%s\\%s\\%s"):format(Library.folder, Library.game, "chatspam.txt")) then
+		writefile(("%s\\%s\\%s"):format(Library.folder, Library.game, "chatspam.txt"), "hello dear moonlight user, you forgot to change your chatspam.\nhey change your chatspam.\ndon't forget to change your chatspam!!")
+	end
 
 	-- Tabs
 	local LegitTab = Window:Tab("  Legit")
@@ -2537,11 +3273,37 @@ do
 	local Ragebot = RageTab:Section({ name = "Rage Bot", side = "left" })
 	Ragebot:Toggle({ name = "Rage Bot", flag = "ragebot" })
 		:Keybind({ name = "Rage Bot", listignored = false, mode = "toggle", blacklist = {}, flag = "ragebot_key" })
+	Ragebot:Dropdown({ name = "Rage Bot Hitbox", content = { "Head", "Torso" }, multi = false, flag = "ragebot_hitbox" })
+		:Set("Head")
 	Ragebot:Toggle({ name = "Fire Position Scanning", flag = "rage_fire_pos" })
-	Ragebot:Slider({ name = "Radius", default = 6, float = 0.1, suffix = " studs", min = 1, max = 12, flag = "rage_fire_pos_amount" })
+	Ragebot:Slider({ name = "Radius", default = 6, float = 0.1, suffix = " studs", min = 1, max = 15.9, flag = "rage_fire_pos_amount" })
 	Ragebot:Toggle({ name = "Hitbox Shifting", flag = "rage_hitbox" })
-	Ragebot:Slider({ name = "Radius", default = 6, float = 0.1, suffix = " studs", min = 1, max = 10, flag = "rage_hitbox_amount" })
-	
+	Ragebot:Slider({ name = "Radius", default = 6, float = 0.1, suffix = " studs", min = 1, max = 9.9, flag = "rage_hitbox_amount" })
+	Ragebot:Toggle({ name = "Anti Over Fire", flag = "rage_anti_over" })
+
+	local AntiAim = RageTab:Section({ name = "Anti Aim", side = "middle" })
+	AntiAim:Toggle({ name = "Anti Aim", flag = "anti_aim" })
+		:Keybind({ name = "Anti Aim", listignored = false, mode = "toggle", blacklist = {}, flag = "anti_aim_key" })
+	AntiAim:Dropdown({ name = "Pitch", content = { "Off", "Up", "Down", "Random", "Zero", "Custom" }, multi = false, flag = "anti_aim_pitch" })
+		:Set("Off")
+
+	AntiAim:Slider({ name = "Custom Pitch", default = 0, float = 0.1, suffix = "°", min = -2, max = 2, flag = "anti_aim_custom_pitch" })
+
+	AntiAim:Dropdown({ name = "Yaw", content = { "Off", "Backward", "Spin", "Random", "Jitter", "Custom" }, multi = false, flag = "anti_aim_yaw" })
+		:Set("Off")
+
+	AntiAim:Slider({ name = "Custom Yaw", default = 0, float = 1, suffix = "°", min = -180, max = 180, flag = "anti_aim_custom_yaw" })
+
+	AntiAim:Slider({ name = "Spin Speed", default = 180, float = 1, suffix = "°", min = -360, max = 360, flag = "anti_aim_spinspeed" })
+
+	AntiAim:Slider({ name = "Jitter Range", default = 0, float = 1, suffix = "°", min = -360, max = 360, flag = "anti_aim_yaw_jitter_amount" })
+
+	local Knifebot = RageTab:Section({ name = "Knifebot", side = "right" })
+	Knifebot:Toggle({ name = "Knifebot", flag = "knifebot" })
+		:Keybind({ name = "Knifebot", listignored = false, mode = "toggle", blacklist = {}, flag = "knifebot_key" })
+	Knifebot:Dropdown({ name = "Hitbox", content = { "Head", "Torso" }, multi = false, flag = "knifebot_hitbox" })
+		:Set("Head")
+	Knifebot:Slider({ name = "Radius", default = 25, float = 1, suffix = " studs", min = 1, max = 25, flag = "knifebot_radius" })
 
 	local ESP_Types = {
 		["Enemy"] = {
@@ -2580,6 +3342,8 @@ do
 		ESP:Toggle({ name = "Team", flag = v.Flag .. "team" })
 			:Colorpicker({ name = "Team Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "team_color"})
 		ESP:Toggle({ name = "Use Team Color", flag = v.Flag .. "team_use_color" })
+		ESP:Toggle({ name = "Server Position", flag = v.Flag .. "server" })
+			:Colorpicker({ name = "Team Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "server_color"})
 		ESP:Toggle({ name = "Out of View", flag = v.Flag .. "oof" })
 			:Colorpicker({ name = "Out of View Color", default = Color3fromRGB(255, 255, 255), flag = v.Flag .. "oof_color"})
 		ESP:Slider({ name = "Out of View Size", default = 13, float = 1, suffix = " px", min = 1, max = 30, flag = v.Flag .. "oof_size" })
@@ -2591,12 +3355,27 @@ do
 		ESP:Slider({ name = "Chams Outline Transparency", default = 255, float = 1, min = 1, max = 255, flag = v.Flag .. "chams_outline_a" })
 	end
 
+	local Fonts = {}
+	for _,v in next, Utility.Fonts do
+		Fonts[#Fonts + 1] = _
+	end
+
 	local ESPSettings = PlayersTab:Section({ name = "ESP Settings", side = "right" })
+	ESPSettings:Toggle({ name = "Use Server Position", flag = "esp_server_pos" })
 	ESPSettings:Toggle({ name = "Limit Distance", flag = "esp_limit_distance" })
 	ESPSettings:Slider({ name = "Maximum Distance", default = 300, float = 1, suffix = " studs", min = 1, max = 5000, flag = "esp_limit_distance_amount" })
-	ESPSettings:Dropdown({ name = "ESP Font", content = { "Plex", "Monospace", "UI", "System" }, multi = false, flag = "esp_font" })
-		:Set("Plex")
-	ESPSettings:Slider({ name = "ESP Size", default = 14, float = 1, suffix = " px", min = 1, max = 30, flag = "esp_font_size" })
+	ESPSettings:Dropdown({ name = "Top ESP Font", content = Fonts, multi = false, flag = "esp_top_font" })
+		:Set("Verdana")
+	ESPSettings:Slider({ name = "Top ESP Size", default = 14, float = 1, suffix = " px", min = 1, max = 30, flag = "esp_top_font_size" })
+	ESPSettings:Dropdown({ name = "Bottom ESP Font", content = Fonts, multi = false, flag = "esp_bottom_font" })
+		:Set("Pixel")
+	ESPSettings:Slider({ name = "Bottom ESP Size", default = 11, float = 1, suffix = " px", min = 1, max = 30, flag = "esp_bottom_font_size" })
+	ESPSettings:Dropdown({ name = "Left ESP Font", content = Fonts, multi = false, flag = "esp_left_font" })
+		:Set("Pixel")
+	ESPSettings:Slider({ name = "Left ESP Size", default = 11, float = 1, suffix = " px", min = 1, max = 30, flag = "esp_left_font_size" })
+	ESPSettings:Dropdown({ name = "Right ESP Font", content = Fonts, multi = false, flag = "esp_right_font" })
+		:Set("Pixel")
+	ESPSettings:Slider({ name = "Right ESP Size", default = 11, float = 1, suffix = " px", min = 1, max = 30, flag = "esp_right_font_size" })
 	ESPSettings:Slider({ name = "Max HP Visibility Cap", default = 90, float = 1, suffix = " hp", min = 1, max = 100, flag = "max_hp_vis_cap" })
 	ESPSettings:Toggle({ name = "Highlight Target", flag = "esp_highlight_target" })
 		:Colorpicker({ name = "Highlight Target Color", default = Color3fromRGB(255, 0, 0), flag = "esp_highlight_target_color"})
@@ -2633,9 +3412,9 @@ do
 	Interface:Slider({ name = "Spin Speed", default = 5, float = 1, min = 1, max = 50, flag = "crosshair_spin_speed" })
 	Interface:Slider({ name = "Thickness", default = 1, float = 1, suffix = " px", min = 1, max = 30, flag = "crosshair_thick" })
 	Interface:Slider({ name = "Size", default = 5, float = 1, suffix = " px", min = 1, max = 30, flag = "crosshair_size" })
-	Interface:Slider({ name = "Gap", default = 5, float = 1, suffix = " px", min = 1, max = 30, flag = "crosshair_gap" })
+	Interface:Slider({ name = "Gap", default = 5, float = 1, suffix = " px", min = 0, max = 30, flag = "crosshair_gap" })
 
-	local CameraVisuals = VisualsTab:Section({ name = "Local", side = "middle" })
+	local CameraVisuals = VisualsTab:Section({ name = "Camera", side = "middle" })
 	CameraVisuals:Toggle({ name = "Fov Changer", flag = "fov_changer" })
 	CameraVisuals:Slider({ name = "Fov Amount", default = 90, suffix = "°", float = 1, min = 1, max = 120, flag = "fov_changer_amount" })
 	CameraVisuals:Toggle({ name = "Remove Viewmodel Bob", flag = "remove_bob", callback = function(v)
@@ -2686,6 +3465,11 @@ do
 	Local:Slider({ name = "Transparency", default = 100, float = 1, min = 1, max = 255, flag = "arm_chams_trans", callback = function() Visuals:UpdateArms() end })
 	Local:Dropdown({ name = "Texture", content = Textures, multi = false, flag = "arm_chams_decal", callback = function() Visuals:UpdateArms() end })
 		:Set("Off")
+	Local:Toggle({ name = "Third Person", flag = "thirdperson" })
+		:Keybind({ name = "Third Person", listignored = false, mode = "toggle", blacklist = {}, flag = "thirdperson_key" })
+	Local:Slider({ name = "X Offset", default = 0, float = 0.01, min = -10, max = 10, flag = "thirdperson_x" })
+	Local:Slider({ name = "Y Offset", default = 0, float = 0.01, min = -10, max = 10, flag = "thirdperson_y" })
+	Local:Slider({ name = "Z Offset", default = 0, float = 0.01, min = -10, max = 10, flag = "thirdperson_z" })
 
 	World:Toggle({ name = "Set Time", flag = "time_changer" })
 	World:Slider({ name = "Time Amount", default = 12, float = 0.1, min = 0, max = 24, flag = "time_changer_amount" })
@@ -2741,18 +3525,47 @@ do
 	GunMods:Toggle({ name = "Instant Equip", flag = "instant_equip" })
 	GunMods:Toggle({ name = "Instant Reload", flag = "instant_reload" })
 	GunMods:Toggle({ name = "Set Weapon To Automatic", flag = "automatic" })
+	
+	local ChatSpam = MiscTab:Section({ name = "Chat Spam", side = "middle" })
+	ChatSpam:Toggle({ name = "Chat Spam", flag = "chat_spam" })
+	ChatSpam:Slider({ name = "Cooldown", default = 5, float = 1, min = 1, max = 25, flag = "chat_spam_time" })
+	ChatSpam:Dropdown({ name = "Type", content = {"Nerd", "Random", "Moonlight", "Custom"}, multi = false, flag = "chat_spam_type" })
+		:Set("Nerd")
+	ChatSpam:Toggle({ name = "Emojis", flag = "chat_spam_emojis" })
+	ChatSpam:Slider({ name = "Minimum", default = 1, float = 1, min = 1, max = 5, flag = "chat_spam_emojis_min" })
+	ChatSpam:Slider({ name = "Maximum", default = 1, float = 1, min = 1, max = 5, flag = "chat_spam_emojis_max" })
+	ChatSpam:Toggle({ name = "Symbols", flag = "chat_spam_symbols" })
+	ChatSpam:Slider({ name = "Minimum", default = 1, float = 1, min = 1, max = 5, flag = "chat_spam_symbols_min" })
+	ChatSpam:Slider({ name = "Maximum", default = 1, float = 1, min = 1, max = 5, flag = "chat_spam_symbols_max" })
+
+	local SoundFiles, SoundNames = Utility:GetFiles("Sounds", {"mp3", "wav"})
 
 	local Extra = MiscTab:Section({ name = "Extra", side = "right" })
 	Extra:Toggle({ name = "Hit Sound", flag = "hitsound_enabled" })
 	Extra:Slider({ name = "Volume", default = 50, float = 1, min = 0, max = 100, flag = "hitsound_volume" })
 	Extra:Slider({ name = "Pitch", default = 100, float = 1, min = 0, max = 200, flag = "hitsound_pitch" })
-	Extra:Box({ name = "Hit Sound ID", default = "6229978482", flag = "hitsound_id", clearonfocus = false })
+	local Hitsounds = Extra:Dropdown({ name = "Sound", content = SoundNames, multi = false, flag = "hitsound_id" })
 	Extra:Toggle({ name = "Kill Sound", flag = "killsound_enabled" })
 	Extra:Slider({ name = "Volume", default = 50, float = 1, min = 0, max = 100, flag = "killsound_volume" })
 	Extra:Slider({ name = "Pitch", default = 100, float = 1, min = 0, max = 200, flag = "killsound_pitch" })
-	Extra:Box({ name = "Kill Sound ID", default = "5709456554", flag = "killsound_id", clearonfocus = false })
-	Extra:Toggle({ name = "Join New Game On Votekick", flag = "server_hop" })
+	Extra:Separator()
+	local Killsounds = Extra:Dropdown({ name = "Sound", content = SoundNames, multi = false, flag = "killsound_id" })
+	Extra:Button({
+		name = "Refresh",
+		callback = function()
+			local SoundFiles, SoundNames = Utility:GetFiles("Sounds", {"mp3", "wav"})
 
+			Hitsounds:Refresh(SoundNames)
+			Killsounds:Refresh(SoundNames)
+		end
+	})
+	Extra:Separator()
+	Extra:Toggle({ name = "Suppress only", flag = "suppress_only" })
+	Extra:Toggle({ name = "Ignore Friends", flag = "ignore_friends" })
+	Extra:Toggle({ name = "Join New Game On Votekick", flag = "server_hop" })
+	Extra:Toggle({ name = "Auto Vote Kick", flag = "auto_kick" })
+	Extra:Slider({ name = "Minimum Kills", default = 5, float = 1, min = 1, max = 15, flag = "auto_kick_amount" })
+	Extra:Toggle({ name = "Shift Firerate", flag = "shift_fire" })
 	--
 
 	-- Settings Tab
