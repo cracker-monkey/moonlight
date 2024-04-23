@@ -610,7 +610,7 @@ do
 		return Object
 	end
 
-	Utility.Fonts["Verdana"] = Utility:New("Font", {
+	--[[ Utility.Fonts["Verdana"] = Utility:New("Font", {
 		Data = game:HttpGet("https://cdn.discordapp.com/attachments/1154475864742965330/1222520060028129411/verdana.ttf?ex=66168387&is=66040e87&hm=ebc0de5d5d449a370ecff0c8e489a12343147d3452edfc298a742cef6cc9f3da&")
 	}, nil, "Verdana")
 
@@ -644,7 +644,7 @@ do
 
 	Utility.Fonts["Penis"] = Utility:New("Font", {
 		Data = game:HttpGet("https://cdn.discordapp.com/attachments/1154475864742965330/1223022748188545134/Penis_Typography_Regular.ttf?ex=661857b1&is=6605e2b1&hm=d0e20a69104fa1df02e21322d5fa8f892c0ee8e13bdd06141b9b5c0410e025c0&")
-	}, nil, "Penis")
+	}, nil, "Penis") ]]
 
 	function Utility:Unload()
 		Library:Unload()
